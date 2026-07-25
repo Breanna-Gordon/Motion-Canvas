@@ -1,0 +1,613 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MotionCanvas  -  DPR</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@200;300;400&display=swap');
+ 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --muted: #666;
+      --accent: #c8ff00;
+      --accent-dim: rgba(200,255,0,0.12);
+      --danger: #ff4444;
+    }
+ 
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+ 
+    /* ── Canvas ── */
+    #drawCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      cursor: crosshair;
+    }
+ 
+    /* ── Top bar ── */
+    #topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      pointer-events: none;
+    }
+ 
+    #topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+ 
+    .wordmark {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+ 
+    .wordmark span {
+      color: var(--accent);
+    }
+ 
+    .divider {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+    }
+ 
+    #mode-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: transparent;
+      transition: all 0.3s ease;
+    }
+ 
+    #mode-badge.leap-active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+ 
+    #topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: all;
+    }
+ 
+    /* ── Bottom toolbar ── */
+    #toolbar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20,20,20,0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 12px;
+      z-index: 100;
+    }
+ 
+    .tool-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+ 
+    .tool-btn:hover {
+      color: var(--text);
+      border-color: var(--border);
+    }
+ 
+    .tool-btn.danger:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+ 
+    /* ── Colour swatches ── */
+    .swatch-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+ 
+    .swatch {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+      flex-shrink: 0;
+    }
+ 
+    .swatch.active {
+      border-color: var(--text);
+    }
+ 
+    /* ── Stroke size slider ── */
+    .slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+ 
+    .slider-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+ 
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 80px;
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      outline: none;
+      cursor: pointer;
+    }
+ 
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+ 
+    /* ── Tremor toggle ── */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+ 
+    .toggle-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+ 
+    .toggle {
+      width: 32px; height: 16px;
+      background: var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+ 
+    .toggle.on { background: var(--accent); }
+ 
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--bg);
+      top: 2px; left: 2px;
+      transition: transform 0.2s;
+    }
+ 
+    .toggle.on::after { transform: translateX(16px); }
+ 
+    /* ── Status dot ── */
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+    }
+ 
+    .status-dot.active { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+ 
+    /* ── Info panel (bottom left) ── */
+    #info {
+      position: fixed;
+      bottom: 24px;
+      left: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      line-height: 1.8;
+      z-index: 100;
+      pointer-events: none;
+    }
+ 
+    /* ── Leap toggle (top right) ── */
+    #leap-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: all;
+    }
+ 
+    /* ── Fade in ── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+ 
+    #toolbar, #topbar, #info {
+      animation: fadeIn 0.4s ease both;
+    }
+  </style>
+</head>
+<body>
+ 
+<!-- Canvas -->
+<canvas id="drawCanvas"></canvas>
+ 
+<!-- Top bar -->
+<div id="topbar">
+  <div id="topbar-left">
+    <span class="wordmark">Motion<span>Canvas</span></span>
+    <div class="divider"></div>
+    <span id="mode-badge">Mouse Mode</span>
+  </div>
+  <div id="topbar-right">
+    <div id="leap-toggle-wrap">
+      <span class="toggle-label" style="pointer-events:none">Leap</span>
+      <div class="toggle" id="leapToggle" title="Toggle Leap Motion"></div>
+      <div class="status-dot" id="leapDot"></div>
+    </div>
+  </div>
+</div>
+ 
+<!-- Bottom toolbar -->
+<div id="toolbar">
+  <!-- Colour -->
+  <div class="swatch-row" id="swatches">
+    <div class="swatch active" data-color="255,255,255" style="background:#fff"></div>
+    <div class="swatch" data-color="200,255,0" style="background:#c8ff00"></div>
+    <div class="swatch" data-color="255,120,50" style="background:#ff7832"></div>
+    <div class="swatch" data-color="80,180,255" style="background:#50b4ff"></div>
+    <div class="swatch" data-color="255,80,160" style="background:#ff50a0"></div>
+  </div>
+ 
+  <div class="tool-divider" style="width:1px;height:20px;background:var(--border)"></div>
+ 
+  <!-- Size -->
+  <div class="slider-wrap">
+    <span class="slider-label">Size</span>
+    <input type="range" id="sizeSlider" min="0.5" max="3" step="0.1" value="1">
+  </div>
+ 
+  <div class="tool-divider" style="width:1px;height:20px;background:var(--border)"></div>
+ 
+  <!-- Tremor mode -->
+  <div class="toggle-wrap">
+    <span class="toggle-label">Tremor</span>
+    <div class="toggle" id="tremorToggle"></div>
+  </div>
+ 
+  <div class="tool-divider" style="width:1px;height:20px;background:var(--border)"></div>
+ 
+  <!-- Save -->
+  <button class="tool-btn" id="saveBtn">Save</button>
+ 
+  <!-- Clear -->
+  <button class="tool-btn danger" id="clearBtn">Clear</button>
+</div>
+ 
+<!-- Info -->
+<div id="info">
+  <div>DPR </div>
+  <div id="infoMode">mode: mouse simulation</div>
+  <div id="infoStrokes">strokes: 0</div>
+</div>
+ 
+<script src="TouchFree_Tooling (1).js"></script>
+<script>
+// ─────────────────────────────────────────────
+//  MOTIONCAVAS   -   DPR Group
+//  Iteration 1: Gesture to line drawing
+//  Works in mouse simulation mode by default.
+//  Toggle Leap Motion in top-right when connected.
+// ─────────────────────────────────────────────
+ 
+const canvas = document.getElementById('drawCanvas')
+const ctx = canvas.getContext('2d')
+ 
+function resize() {
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+}
+resize()
+window.addEventListener('resize', resize)
+ 
+// ── State ──────────────────────────────────
+const state = {
+  leapMode: false,
+  leapConnected: false,
+  leapHandPresent: false,
+  tremorMode: false,
+  depthOpacity: false,
+  drawing: false,
+  color: '255,255,255',
+  sizeMultiplier: 1,
+  strokeCount: 0,
+  posBuffer: [],
+  prevPos: null,
+  BUFFER_SIZE: 3,
+}
+ 
+// ── Drawing ─────────────────────────────────
+function drawSmooth(points, lineWidth, opacity, color) {
+  if (points.length < 2) return
+  const n = points.length
+  const p0 = points[n - 2]
+  const p1 = points[n - 1]
+  ctx.beginPath()
+  ctx.moveTo(p0.cx, p0.cy)
+  ctx.lineTo(p1.cx, p1.cy)
+  ctx.strokeStyle = `rgba(${color}, ${Math.min(opacity, 1)})`
+  ctx.lineWidth = lineWidth
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.stroke()
+}
+ 
+function drawTremorMark(pos, opacity, color) {
+  for (let i = 0; i < 5; i++) {
+    const angle = Math.random() * Math.PI * 2
+    const len = Math.random() * 12 + 3
+    const sx = pos.cx + (Math.random() - 0.5) * 8
+    const sy = pos.cy + (Math.random() - 0.5) * 8
+    ctx.beginPath()
+    ctx.moveTo(sx, sy)
+    ctx.lineTo(sx + Math.cos(angle) * len, sy + Math.sin(angle) * len)
+    ctx.strokeStyle = `rgba(${color}, ${Math.min(opacity * 0.55, 1)})`
+    ctx.lineWidth = Math.random() * 1.8 + 0.3
+    ctx.lineCap = 'round'
+    ctx.stroke()
+  }
+}
+ 
+// ── Handle a hand/cursor position ────────────
+function handleInput(x, y, depth, speed) {
+  const pos = { cx: x, cy: y }
+  const { color, sizeMultiplier, tremorMode } = state
+ 
+  // map depth/speed to visual properties
+  const rawOpacity = state.depthOpacity && depth !== null
+    ? Math.min(Math.max(1 - (depth + 150) / 350, 0.08), 1.0)
+    : 1.0
+ 
+  const rawWidth = speed !== null
+    ? Math.min(Math.max(speed / 80, 0.6), 14) * sizeMultiplier
+    : 3 * sizeMultiplier
+ 
+  // Tremor detection (Leap mode only)
+  const prevPos = state.posBuffer.length > 0
+    ? state.posBuffer[state.posBuffer.length - 1]
+    : null
+ 
+  if (state.leapMode && tremorMode && prevPos && speed !== null) {
+    const posChange = Math.sqrt((pos.cx - prevPos.cx)**2 + (pos.cy - prevPos.cy)**2)
+    const isTremor = speed > 240 && posChange < 9
+    if (isTremor) {
+      drawTremorMark(pos, rawOpacity, color)
+      return
+    }
+  }
+ 
+  state.posBuffer.push(pos)
+  if (state.posBuffer.length > state.BUFFER_SIZE) state.posBuffer.shift()
+ 
+  if (state.posBuffer.length >= 3) {
+    drawSmooth(state.posBuffer, rawWidth, rawOpacity, color)
+  }
+}
+ 
+function endStroke() {
+  if (state.posBuffer.length > 0) {
+    state.strokeCount++
+    document.getElementById('infoStrokes').textContent = `strokes: ${state.strokeCount}`
+  }
+  state.posBuffer = []
+  state.drawing = false
+}
+ 
+// ── Mouse simulation ─────────────────────────
+canvas.addEventListener('mousedown', (e) => {
+  if (state.leapHandPresent) return
+  state.drawing = true
+  state.posBuffer = []
+})
+ 
+canvas.addEventListener('mousemove', (e) => {
+  if (state.leapHandPresent || !state.drawing) return
+  const speed = 150
+  const depth = -50
+  handleInput(e.clientX, e.clientY, depth, speed)
+})
+
+canvas.addEventListener('mouseup', () => { if (!state.leapHandPresent) endStroke() })
+canvas.addEventListener('mouseleave', () => { if (!state.leapHandPresent) endStroke() })
+ 
+// Touch support
+canvas.addEventListener('touchstart', (e) => {
+  if (state.leapHandPresent) return
+  e.preventDefault()
+  state.drawing = true
+  state.posBuffer = []
+}, { passive: false })
+
+canvas.addEventListener('touchmove', (e) => {
+  if (state.leapHandPresent || !state.drawing) return
+  e.preventDefault()
+  const t = e.touches[0]
+  handleInput(t.clientX, t.clientY, -50, 150)
+}, { passive: false })
+
+canvas.addEventListener('touchend', () => { if (!state.leapHandPresent) endStroke() })
+ 
+// ── TouchFree / Leap Motion ──────────────────
+let _tfLastPos = null
+let _tfInitialized = false
+
+function connectLeap() {
+  if (_tfInitialized) {
+    state.leapConnected = true
+    canvas.style.cursor = 'none'
+    document.getElementById('leapToggle').classList.add('on')
+    document.getElementById('leapDot').classList.add('active')
+    document.getElementById('mode-badge').textContent = 'Leap Motion'
+    document.getElementById('mode-badge').classList.add('leap-active')
+    document.getElementById('infoMode').textContent = 'mode: leap motion'
+    return
+  }
+  _tfInitialized = true
+  TouchFree.Init({ initialiseCursor: false })
+
+  TouchFree.RegisterEventCallback('WhenConnected', () => {
+    state.leapConnected = true
+    canvas.style.cursor = 'none'
+    document.getElementById('leapToggle').classList.add('on')
+    document.getElementById('leapDot').classList.add('active')
+    document.getElementById('mode-badge').textContent = 'Leap Motion'
+    document.getElementById('mode-badge').classList.add('leap-active')
+    document.getElementById('infoMode').textContent = 'mode: leap motion'
+  })
+
+  TouchFree.RegisterEventCallback('HandFound', () => {
+    state.leapHandPresent = true
+  })
+
+  TouchFree.RegisterEventCallback('HandsLost', () => {
+    state.leapHandPresent = false
+    _tfLastPos = null
+    endStroke()
+  })
+
+  TouchFree.RegisterEventCallback('TransmitInputAction', (action) => {
+    if (!state.leapHandPresent) return
+    const x = action.CursorPosition[0]
+    const y = action.CursorPosition[1]
+    let speed = 0
+    if (_tfLastPos) {
+      const dx = x - _tfLastPos[0]
+      const dy = y - _tfLastPos[1]
+      speed = Math.sqrt(dx * dx + dy * dy) * 60
+    }
+    _tfLastPos = [x, y]
+    const depth = -action.DistanceFromScreen
+    handleInput(x, y, depth, speed)
+  })
+}
+
+function disconnectLeap() {
+  state.leapConnected = false
+  state.leapHandPresent = false
+  _tfLastPos = null
+  endStroke()
+  canvas.style.cursor = 'crosshair'
+  document.getElementById('leapToggle').classList.remove('on')
+  document.getElementById('leapDot').classList.remove('active')
+  document.getElementById('mode-badge').textContent = 'Mouse Mode'
+  document.getElementById('mode-badge').classList.remove('leap-active')
+  document.getElementById('infoMode').textContent = 'mode: mouse simulation'
+}
+ 
+// ── UI controls ──────────────────────────────
+ 
+// Leap toggle
+document.getElementById('leapToggle').addEventListener('click', () => {
+  if (!state.leapConnected) {
+    connectLeap()
+  } else {
+    disconnectLeap()
+  }
+})
+ 
+// Tremor toggle
+document.getElementById('tremorToggle').addEventListener('click', () => {
+  state.tremorMode = !state.tremorMode
+  document.getElementById('tremorToggle').classList.toggle('on', state.tremorMode)
+})
+ 
+// Colour swatches
+document.getElementById('swatches').addEventListener('click', (e) => {
+  const swatch = e.target.closest('.swatch')
+  if (!swatch) return
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'))
+  swatch.classList.add('active')
+  state.color = swatch.dataset.color
+})
+ 
+// Size slider
+document.getElementById('sizeSlider').addEventListener('input', (e) => {
+  state.sizeMultiplier = parseFloat(e.target.value)
+})
+ 
+// Save button
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const link = document.createElement('a')
+  link.download = `motioncavas-${Date.now()}.png`
+  link.href = canvas.toDataURL('image/png')
+  link.click()
+})
+ 
+// Clear button
+document.getElementById('clearBtn').addEventListener('click', () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  state.strokeCount = 0
+  document.getElementById('infoStrokes').textContent = 'strokes: 0'
+  state.posBuffer = []
+})
+ 
+// ── Init ─────────────────────────────────────
+document.getElementById('infoMode').textContent = 'mode: mouse simulation'
+document.getElementById('infoStrokes').textContent = 'strokes: 0'
+connectLeap()
+</script>
+</body>
+</html>

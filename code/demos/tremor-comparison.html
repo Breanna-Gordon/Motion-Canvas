@@ -1,0 +1,624 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tremor Reframing  -  MotionCanvas Test</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=DM+Sans:wght@200;300;400&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0c0c;
+      --surface: #141414;
+      --border: #222;
+      --text: #e0e0e0;
+      --muted: #555;
+      --accent: #c8ff00;
+      --red: #ff4444;
+      --blue: #50b4ff;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── Layout ── */
+    #app {
+      display: grid;
+      grid-template-rows: 52px 1fr 80px;
+      height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(12,12,12,0.95);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+
+    .wordmark {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      color: var(--text);
+    }
+
+    .wordmark span { color: var(--accent); }
+
+    .header-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── Canvases ── */
+    #canvases {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      overflow: hidden;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .divider-line {
+      background: var(--border);
+      width: 1px;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      cursor: crosshair;
+    }
+
+    /* ── Panel labels ── */
+    .panel-label {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .panel-label .title {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .panel-label .desc {
+      font-size: 11px;
+      font-weight: 200;
+      color: var(--muted);
+      max-width: 200px;
+      line-height: 1.5;
+    }
+
+    #panel-raw .panel-label .title { color: var(--red); }
+    #panel-reframe .panel-label .title { color: var(--accent); }
+
+    /* ── Tremor indicator ── */
+    .tremor-indicator {
+      position: absolute;
+      bottom: 16px;
+      left: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      z-index: 5;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.15s;
+    }
+
+    .tremor-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.1s, box-shadow 0.1s;
+    }
+
+    .tremor-indicator.active { color: var(--accent); }
+    .tremor-indicator.active .tremor-dot {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      border-top: 1px solid var(--border);
+      background: rgba(12,12,12,0.95);
+      padding: 0 24px;
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tool-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn:hover { color: var(--text); border-color: #444; }
+    .btn.active { color: var(--accent); border-color: var(--accent); background: rgba(200,255,0,0.08); }
+    .btn.clear:hover { color: var(--red); border-color: var(--red); }
+
+    #simulateBtn {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: rgba(200,255,0,0.08);
+    }
+    #simulateBtn:hover { background: rgba(200,255,0,0.15); }
+    #simulateBtn.running { animation: pulse 0.4s ease infinite alternate; }
+
+    @keyframes pulse {
+      from { box-shadow: 0 0 0 0 rgba(200,255,0,0.2); }
+      to   { box-shadow: 0 0 0 6px rgba(200,255,0,0); }
+    }
+
+    .toolbar-divider { width: 1px; height: 24px; background: var(--border); }
+
+    #speedDisplay {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      min-width: 120px;
+    }
+    #speedDisplay span { color: var(--text); }
+
+    /* ── Instructions overlay ── */
+    #instructions {
+      position: fixed;
+      inset: 0;
+      background: rgba(12,12,12,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      gap: 16px;
+      backdrop-filter: blur(12px);
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    #instructions .big {
+      font-size: 28px;
+      font-weight: 200;
+      color: var(--text);
+      text-align: center;
+      max-width: 500px;
+      line-height: 1.4;
+    }
+
+    #instructions .small {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    #instructions .start-btn {
+      margin-top: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      background: rgba(200,255,0,0.08);
+      padding: 12px 32px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: background 0.15s;
+    }
+    #instructions .start-btn:hover { background: rgba(200,255,0,0.15); }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <span class="wordmark">Motion<span>Canvas</span></span>
+    <span class="header-label">Tremor Reframing  -  Comparison</span>
+    <span class="header-label">DPR</span>
+  </header>
+
+  <div id="canvases">
+    <div class="panel" id="panel-raw">
+      <canvas id="rawCanvas"></canvas>
+      <div class="panel-label">
+        <div class="title">Raw Output</div>
+        <div class="desc">No correction, no reframing. Movement mapped directly to line.</div>
+      </div>
+      <div class="tremor-indicator" id="rawTremorIndicator">
+        <div class="tremor-dot"></div>
+        tremor detected
+      </div>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="panel" id="panel-reframe">
+      <canvas id="reframeCanvas"></canvas>
+      <div class="panel-label">
+        <div class="title">Reframed Output</div>
+        <div class="desc">Same movement. Tremor mapped to cross-hatch texture instead of jagged line.</div>
+      </div>
+      <div class="tremor-indicator" id="reframeTremorIndicator">
+        <div class="tremor-dot"></div>
+        tremor detected
+      </div>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <div class="tool-group">
+      <span class="tool-label">Mode</span>
+      <button class="btn active" id="drawBtn">Draw</button>
+      <button class="btn" id="simulateBtn">Simulate Tremor</button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="tool-group">
+      <span class="tool-label">Speed threshold</span>
+      <input type="range" id="speedThreshold" min="50" max="400" value="200"
+        style="width:80px;accent-color:var(--accent);">
+      <span class="tool-label">Pos Δ</span>
+      <input type="range" id="posThreshold" min="2" max="20" value="8"
+        style="width:80px;accent-color:var(--accent);">
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="tool-group">
+      <span class="tool-label">Intensity</span>
+      <input type="range" id="intensitySlider" min="0.2" max="3" step="0.1" value="1"
+        style="width:80px;accent-color:var(--accent);">
+      <span class="tool-label" id="intensityVal">1.0×</span>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div id="speedDisplay">
+      speed: <span id="speedVal">0</span> &nbsp; pos Δ: <span id="posVal">0</span>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <button class="btn clear" id="clearBtn">Clear Both</button>
+  </div>
+</div>
+
+<div id="instructions">
+  <p class="big">Draw on either panel to see the same movement produce different output</p>
+  <p class="small">Move slowly for normal strokes  -  move fast and jitter for tremor simulation</p>
+  <p class="small">Or use Simulate Tremor to see the difference automatically</p>
+  <button class="start-btn" id="startBtn">Begin</button>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  TREMOR REFRAMING  -  COMPARISON DEMO
+//  Left panel:  raw mapping  -  tremor = jagged line
+//  Right panel: reframed    -  tremor = cross-hatch texture
+//  Same input feeds both simultaneously.
+// ─────────────────────────────────────────────
+
+const rawCanvas     = document.getElementById('rawCanvas')
+const reframeCanvas = document.getElementById('reframeCanvas')
+const rawCtx        = rawCanvas.getContext('2d')
+const reframeCtx    = reframeCanvas.getContext('2d')
+
+function resizeCanvases() {
+  const panel = document.getElementById('panel-raw')
+  const w = panel.offsetWidth, h = panel.offsetHeight
+  rawCanvas.width = w;     rawCanvas.height = h
+  reframeCanvas.width = w; reframeCanvas.height = h
+}
+resizeCanvases()
+window.addEventListener('resize', resizeCanvases)
+
+// ── State ──────────────────────────────────
+const state = {
+  drawing: false,
+  posBuffer: [],
+  prevRawPos: null,
+  lastPos: null,
+  lastTime: 0,
+  simulationInterval: null,
+  simulationRunning: false,
+  BUFFER_SIZE: 5,
+}
+
+let speedThreshold  = 200
+let posThreshold    = 8
+let tremorIntensity = 1
+
+document.getElementById('speedThreshold').addEventListener('input', e => {
+  speedThreshold = parseFloat(e.target.value)
+})
+document.getElementById('posThreshold').addEventListener('input', e => {
+  posThreshold = parseFloat(e.target.value)
+})
+document.getElementById('intensitySlider').addEventListener('input', e => {
+  tremorIntensity = parseFloat(e.target.value)
+  document.getElementById('intensityVal').textContent = tremorIntensity.toFixed(1) + '×'
+})
+
+// ── Tremor detection ─────────────────────
+function isTremor(speed, posDelta) {
+  return speed > speedThreshold && posDelta < posThreshold
+}
+
+// ── Drawing  -  raw panel ──────────────────
+function drawRawSmooth(points, width, opacity) {
+  if (points.length < 2) return
+  rawCtx.beginPath()
+  rawCtx.moveTo(points[0].x, points[0].y)
+  for (let i = 1; i < points.length - 1; i++) {
+    const mx = (points[i].x + points[i+1].x) / 2
+    const my = (points[i].y + points[i+1].y) / 2
+    rawCtx.quadraticCurveTo(points[i].x, points[i].y, mx, my)
+  }
+  rawCtx.lineTo(points[points.length-1].x, points[points.length-1].y)
+  rawCtx.strokeStyle = `rgba(255,255,255,${Math.min(opacity,1)})`
+  rawCtx.lineWidth = width
+  rawCtx.lineCap = 'round'
+  rawCtx.lineJoin = 'round'
+  rawCtx.stroke()
+}
+
+function drawRawTremor(pos, width, opacity) {
+  if (!state.prevRawPos) return
+  rawCtx.beginPath()
+  rawCtx.moveTo(state.prevRawPos.x, state.prevRawPos.y)
+  rawCtx.lineTo(pos.x, pos.y)
+  rawCtx.strokeStyle = `rgba(255,255,255,${Math.min(opacity * 0.9, 1)})`
+  rawCtx.lineWidth = width
+  rawCtx.lineCap = 'round'
+  rawCtx.stroke()
+}
+
+// ── Drawing  -  reframe panel ──────────────
+function drawReframeSmooth(points, width, opacity) {
+  if (points.length < 2) return
+  reframeCtx.beginPath()
+  reframeCtx.moveTo(points[0].x, points[0].y)
+  for (let i = 1; i < points.length - 1; i++) {
+    const mx = (points[i].x + points[i+1].x) / 2
+    const my = (points[i].y + points[i+1].y) / 2
+    reframeCtx.quadraticCurveTo(points[i].x, points[i].y, mx, my)
+  }
+  reframeCtx.lineTo(points[points.length-1].x, points[points.length-1].y)
+  reframeCtx.strokeStyle = `rgba(255,255,255,${Math.min(opacity,1)})`
+  reframeCtx.lineWidth = width
+  reframeCtx.lineCap = 'round'
+  reframeCtx.lineJoin = 'round'
+  reframeCtx.stroke()
+}
+
+function drawReframeTremor(pos, opacity) {
+  const count  = Math.round(3 + tremorIntensity * 4)
+  const spread = 5 * tremorIntensity
+  const maxLen = 3 + tremorIntensity * 14
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2
+    const len   = Math.random() * maxLen + 3
+    const sx    = pos.x + (Math.random() - 0.5) * spread
+    const sy    = pos.y + (Math.random() - 0.5) * spread
+    reframeCtx.beginPath()
+    reframeCtx.moveTo(sx, sy)
+    reframeCtx.lineTo(sx + Math.cos(angle) * len, sy + Math.sin(angle) * len)
+    reframeCtx.strokeStyle = `rgba(255,255,255,${Math.min(opacity * Math.min(0.35 + tremorIntensity * 0.2, 0.8), 1)})`
+    reframeCtx.lineWidth = Math.random() * (0.3 + tremorIntensity * 0.6) + 0.3
+    reframeCtx.lineCap = 'round'
+    reframeCtx.stroke()
+  }
+}
+
+// ── Process input (feeds both panels) ────
+let _lpx = 0, _lpy = 0, _lt = 0
+
+function calcSpeed(x, y) {
+  const now = performance.now()
+  const dt  = Math.max(now - _lt, 1)
+  const spd = Math.sqrt((x-_lpx)**2 + (y-_lpy)**2) / dt * 500
+  _lpx = x; _lpy = y; _lt = now
+  return spd
+}
+
+function processInput(x, y, speed) {
+  const pos      = { x, y }
+  const posDelta = state.lastPos
+    ? Math.sqrt((x - state.lastPos.x)**2 + (y - state.lastPos.y)**2)
+    : 999
+
+  state.lastPos = pos
+
+  document.getElementById('speedVal').textContent = Math.round(speed)
+  document.getElementById('posVal').textContent   = posDelta.toFixed(1)
+
+  const tremor  = isTremor(speed, posDelta)
+  const opacity = 0.85
+  const width   = Math.min(Math.max(speed / 80, 0.8), 10)
+
+  document.getElementById('rawTremorIndicator').classList.toggle('active', tremor)
+  document.getElementById('reframeTremorIndicator').classList.toggle('active', tremor)
+
+  if (tremor) {
+    drawRawTremor(pos, width * 0.6, opacity)    // raw: wobbly line continues
+    drawReframeTremor(pos, opacity)              // reframe: cross-hatch instead
+    state.prevRawPos = pos
+    state.posBuffer  = []
+  } else {
+    state.prevRawPos = pos
+    state.posBuffer.push(pos)
+    if (state.posBuffer.length > state.BUFFER_SIZE) state.posBuffer.shift()
+    if (state.posBuffer.length >= 3) {
+      drawRawSmooth(state.posBuffer, width, opacity)
+      drawReframeSmooth(state.posBuffer, width, opacity)
+    }
+  }
+}
+
+function endStroke() {
+  state.drawing    = false
+  state.posBuffer  = []
+  state.lastPos    = null
+  state.prevRawPos = null
+}
+
+// ── Mouse ─────────────────────────────────
+;['rawCanvas', 'reframeCanvas'].forEach(id => {
+  const c = document.getElementById(id)
+  c.addEventListener('mousedown', (e) => {
+    if (state.simulationRunning) return
+    state.drawing   = true
+    state.posBuffer = []
+    _lt = 0
+    const r = rawCanvas.getBoundingClientRect()
+    state.lastPos    = { x: e.clientX - r.left, y: e.clientY - r.top }
+    state.prevRawPos = state.lastPos
+  })
+  c.addEventListener('mousemove', (e) => {
+    if (!state.drawing || state.simulationRunning) return
+    const r = rawCanvas.getBoundingClientRect()
+    const x = e.clientX - r.left, y = e.clientY - r.top
+    processInput(x, y, calcSpeed(x, y))
+  })
+  c.addEventListener('mouseup',    endStroke)
+  c.addEventListener('mouseleave', endStroke)
+})
+
+// ── Simulation ────────────────────────────
+function runTremorSimulation() {
+  if (state.simulationRunning) { stopSimulation(); return }
+
+  state.simulationRunning = true
+  document.getElementById('simulateBtn').classList.add('running')
+  document.getElementById('simulateBtn').textContent = 'Stop'
+
+  const w = rawCanvas.width, h = rawCanvas.height
+  let x = w / 2, y = h / 2
+  let phase = 0, strokePhase = 0
+
+  state.simulationInterval = setInterval(() => {
+    strokePhase += 0.02
+    const inTremor = Math.sin(strokePhase * 0.8) > 0
+
+    if (inTremor) {
+      x += (Math.random() - 0.5) * 6 * tremorIntensity
+      y += (Math.random() - 0.5) * 6 * tremorIntensity
+      x = Math.max(80, Math.min(w - 80, x))
+      y = Math.max(80, Math.min(h - 80, y))
+      processInput(x, y, speedThreshold * 1.8)
+    } else {
+      x += Math.cos(phase) * 3
+      y += Math.sin(phase * 0.7) * 2
+      phase += 0.04
+      x = Math.max(80, Math.min(w - 80, x))
+      y = Math.max(80, Math.min(h - 80, y))
+      state.posBuffer.push({ x, y })
+      if (state.posBuffer.length > state.BUFFER_SIZE) state.posBuffer.shift()
+      if (state.posBuffer.length >= 3) {
+        drawRawSmooth(state.posBuffer, 2, 0.85)
+        drawReframeSmooth(state.posBuffer, 2, 0.85)
+      }
+      state.prevRawPos = { x, y }
+      state.lastPos    = { x, y }
+    }
+  }, 16)
+}
+
+function stopSimulation() {
+  clearInterval(state.simulationInterval)
+  state.simulationRunning = false
+  state.posBuffer = []
+  state.lastPos   = null
+  document.getElementById('simulateBtn').classList.remove('running')
+  document.getElementById('simulateBtn').textContent = 'Simulate Tremor'
+}
+
+document.getElementById('simulateBtn').addEventListener('click', runTremorSimulation)
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  stopSimulation()
+  rawCtx.clearRect(0, 0, rawCanvas.width, rawCanvas.height)
+  reframeCtx.clearRect(0, 0, reframeCanvas.width, reframeCanvas.height)
+  state.posBuffer = []; state.lastPos = null; state.prevRawPos = null
+})
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('instructions').style.display = 'none'
+})
+
+// ── Leap Motion ───────────────────────────
+try {
+  const ws = new WebSocket('ws://localhost:6437/v7.json')
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data)
+    if (data.hands && data.hands.length > 0) {
+      const hand  = data.hands[0]
+      const vel   = hand.palmVelocity
+      const speed = Math.sqrt(vel[0]**2 + vel[1]**2 + vel[2]**2)
+      const cx    = (hand.palmPosition[0] / 250) * (rawCanvas.width / 2) + rawCanvas.width / 2
+      const cy    = rawCanvas.height - ((hand.palmPosition[1] - 80) / 380) * rawCanvas.height
+      if (!state.drawing) { state.drawing = true; state.posBuffer = [] }
+      processInput(cx, cy, speed)
+    } else { endStroke() }
+  }
+} catch(e) {}
+</script>
+</body>
+</html>

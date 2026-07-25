@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MotionCanvas</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0d0c;
+      --warm: #1a1714;
+      --border: #2a2520;
+      --text: #e8e0d5;
+      --muted: #5a5248;
+      --accent: #7ab8c8;
+      --accent-dim: rgba(122,184,200,0.1);
+      --accent2: #d4604a;
+      --green: #7ab87a;
+      --canvas-bg: 14, 13, 12;
+      --panel-bg: rgba(14,13,12,0.92);
+      --topbar-bg: rgba(14,13,12,0.85);
+      --menubtn-bg: rgba(14,13,12,0.85);
+    }
+
+    body.light {
+      --bg: #f2ede8;
+      --warm: #e8e2db;
+      --border: #cec8c0;
+      --text: #2a2520;
+      --muted: #8a8078;
+      --accent: #4a98b0;
+      --accent-dim: rgba(74,152,176,0.12);
+      --accent2: #c04830;
+      --green: #4a9850;
+      --canvas-bg: 242, 237, 232;
+      --panel-bg: rgba(242,237,232,0.96);
+      --topbar-bg: rgba(242,237,232,0.92);
+      --menubtn-bg: rgba(242,237,232,0.92);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      font-family: 'DM Mono', monospace;
+    }
+
+    #defaultCanvas0 {
+      position: fixed !important;
+      top: 0; left: 0;
+      z-index: 0;
+    }
+
+    /* ── Screens ── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease;
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ── Onboarding ── */
+    #onboarding { background: var(--bg); }
+
+    .onboard-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      max-width: 560px;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .logo {
+      font-family: 'Instrument Serif', serif;
+      font-size: 52px;
+      font-style: italic;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+
+    .logo-sub {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 48px;
+    }
+
+    .onboard-line {
+      width: 40px;
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 32px;
+    }
+
+    .onboard-desc {
+      font-family: 'Instrument Serif', serif;
+      font-size: 20px;
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+
+    .onboard-small {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-bottom: 48px;
+    }
+
+    .onboard-btns { display: flex; gap: 12px; }
+
+    .btn-primary {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--accent);
+      border: none;
+      padding: 14px 32px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #f0b040; }
+
+    .btn-secondary {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 14px 32px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+    }
+    .btn-secondary:hover { color: var(--text); border-color: var(--muted); }
+
+    /* ── Calibration ── */
+    #calibration {
+      background: rgba(14,13,12,0.96);
+      backdrop-filter: blur(16px);
+    }
+
+    .cal-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    .cal-tag {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 4px 12px;
+      border-radius: 1px;
+    }
+
+    .cal-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: 32px;
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .cal-desc {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 340px;
+    }
+
+    #rangeViz {
+      width: 280px;
+      height: 180px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+      background: var(--warm);
+    }
+
+    #rangeViz canvas {
+      position: absolute;
+      top: 0; left: 0;
+    }
+
+    .viz-label {
+      position: absolute;
+      bottom: 8px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 8px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .timer-wrap {
+      position: relative;
+      width: 80px; height: 80px;
+    }
+
+    .timer-svg { transform: rotate(-90deg); }
+    .timer-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+    .timer-ring {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 213;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .timer-num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--text);
+    }
+
+    /* calibration success state */
+    .cal-success {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      border: 1px solid var(--green);
+      border-radius: 2px;
+      background: rgba(122,184,122,0.08);
+    }
+    .cal-success.visible { display: flex; }
+    .cal-success-icon {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--bg);
+    }
+    .cal-success-text {
+      font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--green);
+    }
+
+    /* ── Main UI ── */
+    #ui {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #ui.hidden { display: none; }
+
+    /* Top bar */
+    #topbar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: var(--topbar-bg);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      pointer-events: all;
+    }
+
+    .top-logo {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-size: 18px;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .top-logo span { color: var(--accent); }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .mode-pill {
+      font-size: 8px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: all 0.3s;
+    }
+    .mode-pill.leap {
+      color: var(--green);
+      border-color: var(--green);
+      background: rgba(122,184,122,0.08);
+    }
+
+    /* Leap status dot */
+    .leap-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      display: inline-block;
+      margin-right: 4px;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .leap-dot.connected {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; } 50% { opacity:0.5; }
+    }
+
+    .top-btn {
+      font-size: 8px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 5px 12px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+    }
+    .top-btn:hover { color: var(--text); border-color: var(--border); }
+    .top-btn.undo-btn { border-color: var(--border); }
+    .top-btn.undo-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* Side panel */
+    #sidepanel {
+      position: absolute;
+      left: 0; top: 48px; bottom: 0;
+      width: 228px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid var(--border);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      pointer-events: all;
+      overflow-y: auto;
+    }
+    #sidepanel.open { transform: translateX(0); }
+
+    .panel-section { display: flex; flex-direction: column; gap: 10px; }
+
+    .section-label {
+      font-size: 8px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .colour-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .colour-swatch {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .colour-swatch:hover { transform: scale(1.1); }
+    .colour-swatch.active { border-color: var(--text); }
+
+    /* saved custom colours */
+    .saved-colours-label {
+      font-size: 8px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    #savedColoursGrid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-height: 0;
+    }
+    .saved-swatch {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+      position: relative;
+    }
+    .saved-swatch:hover { transform: scale(1.15); border-color: var(--text); }
+    .saved-swatch .del-x {
+      display: none;
+      position: absolute;
+      top: -4px; right: -4px;
+      width: 12px; height: 12px;
+      background: var(--accent2);
+      border-radius: 50%;
+      font-size: 7px;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .saved-swatch:hover .del-x { display: flex; }
+    .save-colour-btn {
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      background: transparent;
+      border: 1px dashed var(--border);
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+      text-transform: uppercase;
+    }
+    .save-colour-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+    .custom-colour-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="color"] {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+      outline: none;
+    }
+
+    .custom-label {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .slider-row { display: flex; flex-direction: column; gap: 6px; }
+
+    .slider-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .slider-name {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .slider-val { font-size: 9px; color: var(--accent); }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .brush-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .brush-btn {
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--warm);
+      border: 1px solid var(--border);
+      padding: 8px 6px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .brush-btn:hover { color: var(--text); border-color: var(--muted); }
+    .brush-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toggle-name {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .toggle {
+      width: 32px; height: 16px;
+      background: var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--bg);
+      top: 2px; left: 2px;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(16px); }
+
+    /* Expressive mode toggle - special style */
+    #expressiveToggle.on { background: #9b59b6; }
+    .expressive-label { color: var(--text) !important; }
+    #expressiveToggle.on ~ .toggle-name,
+    .expressive-row .toggle-name.active-label { color: var(--text); }
+
+    /* Expressive mode badge */
+    #expressiveBadge {
+      display: none;
+      font-size: 7px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
+      border: 1px solid #9b59b6;
+      color: #c380e0;
+      background: rgba(155,89,182,0.12);
+      align-self: flex-start;
+      margin-top: 2px;
+    }
+    #expressiveBadge.visible { display: block; }
+
+    /* Expressive properties */
+    #expressiveProps {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(155,89,182,0.06);
+      border: 1px solid rgba(155,89,182,0.2);
+      border-radius: 3px;
+      padding: 8px;
+    }
+    #expressiveProps.visible { display: flex; }
+    .expressive-prop {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .expressive-prop-name { color: #c380e0; }
+    .expressive-prop-val {
+      color: var(--text);
+      font-size: 8px;
+      min-width: 30px;
+      text-align: right;
+    }
+
+    .panel-actions {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .action-btn {
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 10px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .action-btn:hover { color: var(--text); border-color: var(--muted); }
+    .action-btn.save { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+    .action-btn.save:hover { background: rgba(232,160,48,0.18); }
+    .action-btn.danger:hover { color: var(--accent2); border-color: var(--accent2); }
+
+    /* Menu toggle */
+    #menuBtn {
+      position: absolute;
+      top: 60px;
+      left: 16px;
+      width: 36px; height: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      background: var(--menubtn-bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      transition: all 0.15s;
+      pointer-events: all;
+      z-index: 20;
+    }
+    #menuBtn:hover { border-color: var(--muted); }
+    #menuBtn span {
+      width: 14px; height: 1px;
+      background: var(--muted);
+      transition: background 0.15s;
+      display: block;
+    }
+    #menuBtn:hover span { background: var(--text); }
+
+    /* Info strips */
+    #infostrip {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      line-height: 2;
+      pointer-events: none;
+    }
+
+    #strokecount {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-align: right;
+      line-height: 2;
+      pointer-events: none;
+    }
+
+    /* Tremor flash */
+    #tremorFlash {
+      position: absolute;
+      top: 60px; right: 16px;
+      font-size: 8px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.1s;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #tremorFlash::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+      display: block;
+    }
+    #tremorFlash.visible { opacity: 1; }
+
+    /* Gesture notification */
+    #gestureNotif {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text);
+      background: var(--warm);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #gestureNotif.visible { opacity: 1; }
+
+    /* Sim toggle in side panel */
+    .sim-note {
+      font-size: 8px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      line-height: 1.6;
+      opacity: 0.7;
+    }
+
+    /* Intensity readout */
+    .intensity-readout {
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      text-align: center;
+      line-height: 1;
+    }
+    .intensity-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .intensity-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.1s;
+      width: 33%;
+    }
+
+    /* Gesture hints */
+    .gesture-hints {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .gesture-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 8px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .gesture-key {
+      min-width: 60px;
+      color: var(--accent);
+      font-size: 7px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* Undo/redo stack indicator */
+    #undoIndicator {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    /* save flash */
+    #saveFlash {
+      position: fixed;
+      inset: 0;
+      background: rgba(122,184,122,0.08);
+      border: 2px solid var(--green);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    #saveFlash.flash { animation: save-flash 0.6s ease-out; }
+    @keyframes save-flash {
+      0% { opacity:0.8; }
+      100% { opacity:0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Save flash overlay ── -->
+<div id="saveFlash"></div>
+
+<!-- ── Onboarding ── -->
+<div class="screen" id="onboarding">
+  <div class="onboard-inner">
+    <div class="logo">MotionCanvas</div>
+    <div class="logo-sub">DPR</div>
+    <div class="onboard-line"></div>
+    <p class="onboard-desc">
+      Your movement is the brush.<br>
+      There is no wrong way to move.
+    </p>
+    <p class="onboard-small">
+      Move your hand above the sensor to draw.<br>
+      The system adapts to however you move — <br>
+      every gesture becomes part of the work.
+    </p>
+    <div class="onboard-btns">
+      <button class="btn-primary" id="calibrateStartBtn">Calibrate first</button>
+      <button class="btn-secondary" id="skipCalBtn">Skip to canvas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Calibration ── -->
+<div class="screen hidden" id="calibration">
+  <div class="cal-inner">
+    <div class="cal-tag">Calibration</div>
+    <h2 class="cal-title">Show us how you move</h2>
+    <p class="cal-desc">
+      Move your hand freely across your full natural range for 10 seconds.
+      The system will learn your movement and map it to the full canvas.
+    </p>
+    <div id="rangeViz">
+      <canvas id="vizCanvas" width="280" height="180"></canvas>
+      <div class="viz-label" id="vizLabel">detecting range</div>
+    </div>
+    <div class="timer-wrap">
+      <svg class="timer-svg" width="80" height="80" viewBox="0 0 80 80">
+        <circle class="timer-bg" cx="40" cy="40" r="34"/>
+        <circle class="timer-ring" id="timerRing" cx="40" cy="40" r="34"/>
+      </svg>
+      <div class="timer-num" id="timerNum">10</div>
+    </div>
+    <div class="cal-success" id="calSuccess">
+      <div class="cal-success-icon">✓</div>
+      <div class="cal-success-text">Range calibrated — entering canvas</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main UI overlay ── -->
+<div id="ui" class="hidden">
+  <div id="topbar">
+    <div class="top-logo">Motion<span>Canvas</span></div>
+    <div class="top-right">
+      <span class="mode-pill" id="modePill"><span class="leap-dot" id="leapDot"></span>Mouse</span>
+      <button class="top-btn undo-btn" id="undoBtn" title="Ctrl+Z">⟲ Undo</button>
+      <button class="top-btn undo-btn" id="redoBtn" title="Ctrl+Y">⟳ Redo</button>
+      <button class="top-btn" id="clearTopBtn">Clear</button>
+      <button class="top-btn" id="themeBtn">Light mode</button>
+      <button class="top-btn" id="recalBtn">Recalibrate</button>
+      <button class="top-btn" id="leapBtn">Connect Leap</button>
+    </div>
+  </div>
+
+  <div id="menuBtn">
+    <span></span><span></span><span></span>
+  </div>
+
+  <div id="sidepanel">
+
+    <!-- Colour Section -->
+    <div class="panel-section">
+      <div class="section-label">Colour</div>
+      <div class="colour-grid" id="colourGrid">
+        <div class="colour-swatch active" data-r="232" data-g="224" data-b="213" style="background:#e8e0d5"></div>
+        <div class="colour-swatch" data-r="232" data-g="160" data-b="48"  style="background:#e8a030"></div>
+        <div class="colour-swatch" data-r="212" data-g="96"  data-b="74"  style="background:#d4604a"></div>
+        <div class="colour-swatch" data-r="122" data-g="184" data-b="122" style="background:#7ab87a"></div>
+        <div class="colour-swatch" data-r="80"  data-g="180" data-b="255" style="background:#50b4ff"></div>
+        <div class="colour-swatch" data-r="180" data-g="140" data-b="220" style="background:#b48cdc"></div>
+        <div class="colour-swatch" data-r="240" data-g="200" data-b="120" style="background:#f0c878"></div>
+        <div class="colour-swatch" data-r="255" data-g="120" data-b="160" style="background:#ff78a0"></div>
+        <div class="colour-swatch" data-r="100" data-g="200" data-b="200" style="background:#64c8c8"></div>
+        <div class="colour-swatch" data-r="160" data-g="160" data-b="160" style="background:#a0a0a0"></div>
+        <div class="colour-swatch" data-r="0"   data-g="0"   data-b="0"   style="background:#000000"></div>
+      </div>
+      <div class="custom-colour-row">
+        <input type="color" id="customColour" value="#e8e0d5" title="Pick custom colour">
+        <span class="custom-label">Custom colour</span>
+        <button class="save-colour-btn" id="saveColourBtn" title="Save this colour">+ Save</button>
+      </div>
+      <div class="saved-colours-label" id="savedColoursLabel" style="display:none">Saved</div>
+      <div id="savedColoursGrid"></div>
+    </div>
+
+    <!-- Brush Section -->
+    <div class="panel-section">
+      <div class="section-label">Brush</div>
+      <div class="slider-row">
+        <div class="slider-top">
+          <span class="slider-name">Size</span>
+          <span class="slider-val" id="sizeVal">1.0×</span>
+        </div>
+        <input type="range" id="sizeSlider" min="0.3" max="4" step="0.1" value="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-top">
+          <span class="slider-name">Opacity</span>
+          <span class="slider-val" id="opacityVal">100%</span>
+        </div>
+        <input type="range" id="opacitySlider" min="10" max="100" step="5" value="100">
+      </div>
+      <div class="brush-grid" id="brushGrid">
+        <button class="brush-btn active" data-brush="smooth">Smooth</button>
+        <button class="brush-btn" data-brush="ink">Ink</button>
+        <button class="brush-btn" data-brush="particle">Particle</button>
+        <button class="brush-btn" data-brush="scatter">Scatter</button>
+        <button class="brush-btn" data-brush="eraser">Eraser</button>
+      </div>
+    </div>
+
+    <!-- Movement Section -->
+    <div class="panel-section">
+      <div class="section-label">Movement — Tremor Reframe</div>
+      <div class="toggle-row">
+        <span class="toggle-name">Reframe active</span>
+        <div class="toggle" id="tremorToggle"></div>
+      </div>
+      <!-- Intensity with numeric readout -->
+      <div class="slider-row">
+        <div class="slider-top">
+          <span class="slider-name">Intensity</span>
+          <span class="slider-val" id="tremorIntensityVal">1.0</span>
+        </div>
+        <input type="range" id="tremorIntensitySlider" min="0.2" max="3" step="0.1" value="1">
+        <div class="intensity-bar"><div class="intensity-fill" id="intensityFill"></div></div>
+        <div class="intensity-readout" id="intensityReadout">1.0</div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-name">Simulate tremor</span>
+        <div class="toggle" id="simToggle"></div>
+      </div>
+      <p class="sim-note">Adds synthetic tremor to mouse movement for demo purposes.</p>
+      <button class="action-btn" id="autoDemoBtn">Run auto demo</button>
+      <div class="slider-row">
+        <div class="slider-top">
+          <span class="slider-name">Demo speed</span>
+          <span class="slider-val" id="demoSpeedVal">1×</span>
+        </div>
+        <input type="range" id="demoSpeedSlider" min="0.25" max="3" step="0.25" value="1">
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-name">Velocity width</span>
+        <div class="toggle on" id="velToggle"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-name">Depth opacity</span>
+        <div class="toggle" id="depthToggle"></div>
+      </div>
+    </div>
+
+    <!-- Expressive Mode Section -->
+    <div class="panel-section">
+      <div class="section-label">Expressive Mode</div>
+      <div class="toggle-row expressive-row">
+        <span class="toggle-name expressive-label">Generative art</span>
+        <div class="toggle" id="expressiveToggle"></div>
+      </div>
+      <div id="expressiveBadge">✦ Expressive active</div>
+      <div id="expressiveProps">
+        <div class="expressive-prop">
+          <span class="expressive-prop-name">Texture</span>
+          <span class="expressive-prop-val" id="expTexture">—</span>
+        </div>
+        <div class="expressive-prop">
+          <span class="expressive-prop-name">Rhythm</span>
+          <span class="expressive-prop-val" id="expRhythm">—</span>
+        </div>
+        <div class="expressive-prop">
+          <span class="expressive-prop-name">Pattern</span>
+          <span class="expressive-prop-val" id="expPattern">—</span>
+        </div>
+        <div class="expressive-prop">
+          <span class="expressive-prop-name">Identity</span>
+          <span class="expressive-prop-val" id="expIdentity">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leap Gestures Section -->
+    <div class="panel-section">
+      <div class="section-label">Leap Gestures</div>
+      <div class="gesture-hints">
+        <div class="gesture-hint"><span class="gesture-key">Swipe ←</span> Undo last stroke</div>
+        <div class="gesture-hint"><span class="gesture-key">Swipe →</span> Redo stroke</div>
+        <div class="gesture-hint"><span class="gesture-key">Pinch</span> Open colour picker</div>
+        <div class="gesture-hint"><span class="gesture-key">Double tap</span> Save artwork</div>
+      </div>
+    </div>
+
+    <div class="panel-actions">
+      <button class="action-btn save" id="saveBtn">Save artwork</button>
+      <button class="action-btn" id="undoPanelBtn">⟲ Undo</button>
+      <button class="action-btn danger" id="clearBtn">Clear canvas</button>
+    </div>
+  </div>
+
+  <div id="tremorFlash">tremor reframed</div>
+  <div id="gestureNotif"></div>
+  <div id="infostrip">
+    DPR  —  MotionCanvas · iter 3<br>
+    <span id="modeDisplay">mouse mode</span>
+  </div>
+  <div id="strokecount">
+    strokes: <span id="strokeNum">0</span><br>
+    <span id="calStatus">uncalibrated</span><br>
+    undo: <span id="undoCount">0</span>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  MOTIONCAVAS  -  Iteration 3
+//  New: Undo/Redo · Calibration success state
+//  Tremor concept labels · Dynamic Leap status
+//  Saved custom colours · Expressive mode
+//  Leap gesture recognition · Light mode fix
+//  Intensity numeric readout
+// ─────────────────────────────────────────────
+
+let _lightMode = false
+
+const app = {
+  screen: 'onboarding',
+  leapConnected: false,
+  calibrated: false,
+  cal: { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity },
+  colour: { r: 232, g: 224, b: 213 },
+  brushMode: 'smooth',
+  sizeMultiplier: 1,
+  opacityBase: 1.0,
+  tremorMode: false,
+  tremorIntensity: 1,
+  simTremor: false,
+  velWidth: true,
+  depthOpacity: false,
+  strokeCount: 0,
+  drawing: false,
+  posBuffer: [],
+  BUFFER_SIZE: 3,
+  menuOpen: false,
+  leapHandPresent: false,
+  expressiveMode: false,
+  // Expressive state
+  expressive: {
+    texture: 0,   // 0-1 from tremor
+    rhythm: 0,    // speed oscillation
+    pattern: 0,   // stroke count mod
+    identity: 0,  // cumulative signature
+    time: 0,
+  },
+  // Undo/redo stacks (ImageData snapshots)
+  undoStack: [],
+  redoStack: [],
+  savedColours: [],
+  // Leap gesture tracking
+  leap: {
+    lastPositions: [],
+    pinching: false,
+    lastTapTime: 0,
+    swipeCooldown: 0,
+  },
+}
+
+const TREMOR_SPEED_THRESHOLD = 220
+const TREMOR_DISP_THRESHOLD  = 8
+const MAX_UNDO = 20
+
+// Mouse speed tracking 
+let _mpx = 0, _mpy = 0, _mt = 0
+
+function calcMouseSpeed(x, y) {
+  const now = performance.now()
+  const dt  = Math.max(now - _mt, 1)
+  const spd = Math.sqrt((x - _mpx) ** 2 + (y - _mpy) ** 2) / dt * 1000
+  _mpx = x; _mpy = y; _mt = now
+  return spd
+}
+
+// Tremor simulation 
+function applySimTremor(x, y) {
+  if (!app.simTremor) return { x, y }
+  const t   = performance.now() / 80
+  const amp = 5 * app.tremorIntensity
+  return {
+    x: x + Math.sin(t * 6.7) * amp + Math.cos(t * 11.2) * amp * 0.4,
+    y: y + Math.cos(t * 8.3) * amp + Math.sin(t * 9.4)  * amp * 0.4,
+  }
+}
+
+// Calibration state 
+const cal = {
+  active: false,
+  countdown: 10,
+  interval: null,
+  vizCtx: null,
+}
+
+// p5 sketch 
+const sketch = (p) => {
+
+  p.setup = () => {
+    const cnv = p.createCanvas(p.windowWidth, p.windowHeight)
+    cnv.position(0, 0)
+    cnv.style('z-index', '0')
+    p.background(14, 13, 12)
+    p.noFill()
+  }
+
+  p.windowResized = () => p.resizeCanvas(p.windowWidth, p.windowHeight)
+
+  p.draw = () => { /* persistent canvas */ }
+
+  // Colour helper 
+  function col(alpha) {
+    return p.color(app.colour.r, app.colour.g, app.colour.b, alpha * 255)
+  }
+  function colRGB(r, g, b, alpha) {
+    return p.color(r, g, b, alpha * 255)
+  }
+
+  // Brush functions 
+  function drawSmooth(points, w, alpha) {
+    if (points.length < 2) return
+    p.stroke(col(alpha))
+    p.strokeWeight(w)
+    p.strokeCap(p.ROUND)
+    p.strokeJoin(p.ROUND)
+    p.beginShape()
+    p.curveVertex(points[0].x, points[0].y)
+    points.forEach(pt => p.curveVertex(pt.x, pt.y))
+    p.curveVertex(points[points.length - 1].x, points[points.length - 1].y)
+    p.endShape()
+  }
+
+  function drawInk(points, w, alpha) {
+    if (points.length < 2) return
+    for (let i = 1; i < points.length; i++) {
+      p.stroke(col(alpha * p.random(0.7, 1.0)))
+      p.strokeWeight(w + p.random(-0.8, 0.8))
+      p.strokeCap(p.ROUND)
+      p.line(points[i-1].x, points[i-1].y, points[i].x, points[i].y)
+    }
+  }
+
+  function drawParticle(pos, w, alpha) {
+    const count = Math.floor(w * 3)
+    for (let i = 0; i < count; i++) {
+      const angle  = p.random(p.TWO_PI)
+      const radius = p.random(w * 2)
+      p.stroke(col(alpha * p.random(0.2, 0.8)))
+      p.strokeWeight(p.random(0.5, w * 0.6))
+      p.point(
+        pos.x + Math.cos(angle) * radius * p.random(),
+        pos.y + Math.sin(angle) * radius * p.random()
+      )
+    }
+  }
+
+  function drawScatter(pos, w, alpha) {
+    for (let i = 0; i < 6; i++) {
+      const ox    = p.random(-w * 3, w * 3)
+      const oy    = p.random(-w * 3, w * 3)
+      const len   = p.random(2, w * 2)
+      const angle = p.random(p.TWO_PI)
+      p.stroke(col(alpha * p.random(0.3, 0.7)))
+      p.strokeWeight(p.random(0.3, 1.5))
+      p.line(
+        pos.x + ox, pos.y + oy,
+        pos.x + ox + Math.cos(angle) * len,
+        pos.y + oy + Math.sin(angle) * len
+      )
+    }
+  }
+
+  // Tremor reframe 
+  function drawTremorReframe(pos, alpha) {
+    const intensity = app.tremorIntensity
+    const count     = Math.round(3 + intensity * 4)
+    const spread    = 8 * intensity
+    const maxLen    = 5 + intensity * 10
+    for (let i = 0; i < count; i++) {
+      const angle = p.random(p.TWO_PI)
+      const len   = p.random(3, maxLen)
+      const sx    = pos.x + p.random(-spread, spread)
+      const sy    = pos.y + p.random(-spread, spread)
+      p.stroke(col(alpha * Math.min(0.35 + intensity * 0.15, 0.8)))
+      p.strokeWeight(p.random(0.3, 0.8 + intensity * 0.6))
+      p.strokeCap(p.ROUND)
+      p.line(sx, sy, sx + Math.cos(angle) * len, sy + Math.sin(angle) * len)
+    }
+  }
+
+  // Expressive mode drawing
+  // Tremor becomes Texture / Rhythm / Pattern / Identity
+  function drawExpressive(pos, speed, isTremor) {
+    const e = app.expressive
+    e.time += 0.02
+    const t = e.time
+
+    // Texture: tremor → fine grain / noise overlay
+    if (isTremor) {
+      e.texture = Math.min(e.texture + 0.05, 1)
+    } else {
+      e.texture = Math.max(e.texture - 0.01, 0)
+    }
+
+    // Rhythm: speed oscillation → pulsing stroke width
+    e.rhythm = Math.sin(t * speed * 0.01 + t * 3) * 0.5 + 0.5
+
+    // Pattern: stroke count based symmetry count
+    e.pattern = ((app.strokeCount % 8) + 1)
+
+    // Identity: cumulative color drift
+    e.identity = (e.identity + 0.003) % 1
+
+    const hue = (e.identity * 360 + t * 20) % 360
+    const idR = Math.round(128 + 127 * Math.sin(hue * Math.PI / 180))
+    const idG = Math.round(128 + 127 * Math.sin((hue + 120) * Math.PI / 180))
+    const idB = Math.round(128 + 127 * Math.sin((hue + 240) * Math.PI / 180))
+
+    // TEXTURE: if tremor, scatter fine dots like grain
+    if (isTremor) {
+      const grainCount = Math.floor(8 + e.texture * 20)
+      for (let i = 0; i < grainCount; i++) {
+        const gx = pos.x + p.random(-24 * e.texture, 24 * e.texture)
+        const gy = pos.y + p.random(-24 * e.texture, 24 * e.texture)
+        p.stroke(colRGB(idR, idG, idB, 0.15 + e.texture * 0.3))
+        p.strokeWeight(p.random(0.3, 1.5))
+        p.point(gx, gy)
+      }
+      // Fine web texture
+      for (let i = 0; i < 3; i++) {
+        const a1 = p.random(p.TWO_PI)
+        const a2 = a1 + p.random(-0.5, 0.5)
+        const r  = p.random(4, 16 * e.texture)
+        p.stroke(colRGB(idR, idG, idB, 0.08))
+        p.strokeWeight(0.3)
+        p.line(
+          pos.x + Math.cos(a1) * r, pos.y + Math.sin(a1) * r,
+          pos.x + Math.cos(a2) * r * 1.5, pos.y + Math.sin(a2) * r * 1.5
+        )
+      }
+    }
+
+    // RHYTHM: pulsing ring that breathes with speed
+    const ringR = 8 + e.rhythm * 20
+    p.noFill()
+    p.stroke(colRGB(idR, idG, idB, 0.12 + e.rhythm * 0.15))
+    p.strokeWeight(0.5 + e.rhythm * 1.5)
+    p.ellipse(pos.x, pos.y, ringR * 2, ringR * 2)
+
+    // PATTERN: rotational symmetry based on stroke count
+    const symCount = e.pattern
+    const baseLen  = 6 + e.rhythm * 14
+    for (let s = 0; s < symCount; s++) {
+      const angle = (p.TWO_PI * s / symCount) + t
+      const ex = pos.x + Math.cos(angle) * baseLen
+      const ey = pos.y + Math.sin(angle) * baseLen
+      p.stroke(colRGB(
+        app.colour.r, app.colour.g, app.colour.b,
+        (0.3 + e.rhythm * 0.4) * app.opacityBase
+      ))
+      p.strokeWeight(0.8 + e.rhythm)
+      p.line(pos.x, pos.y, ex, ey)
+    }
+
+    // IDENTITY: trailing identity glyph
+    const glyphSize = 4 + e.identity * 8
+    p.stroke(colRGB(idR, idG, idB, 0.2 + e.identity * 0.2))
+    p.strokeWeight(0.4)
+    p.noFill()
+    p.beginShape()
+    for (let a = 0; a < p.TWO_PI; a += 0.4) {
+      const r = glyphSize * (0.7 + 0.3 * Math.sin(a * 3 + t))
+      p.vertex(pos.x + Math.cos(a) * r, pos.y + Math.sin(a) * r)
+    }
+    p.endShape(p.CLOSE)
+
+    // Update UI readouts
+    document.getElementById('expTexture').textContent = e.texture.toFixed(2)
+    document.getElementById('expRhythm').textContent  = e.rhythm.toFixed(2)
+    document.getElementById('expPattern').textContent = `×${e.pattern} sym`
+    document.getElementById('expIdentity').textContent = `${Math.round(e.identity * 360)}°`
+  }
+
+  // Snapshot for undo
+  p.snapshot = function() {
+    const pd = p.pixelDensity()
+    const imageData = p.drawingContext.getImageData(0, 0, p.width * pd, p.height * pd)
+    app.undoStack.push(imageData)
+    if (app.undoStack.length > MAX_UNDO) app.undoStack.shift()
+    app.redoStack = []
+    document.getElementById('undoCount').textContent = app.undoStack.length
+  }
+
+  p.undo = function() {
+    if (app.undoStack.length === 0) return
+    const pd = p.pixelDensity()
+    const current = p.drawingContext.getImageData(0, 0, p.width * pd, p.height * pd)
+    app.redoStack.push(current)
+    const prev = app.undoStack.pop()
+    p.drawingContext.putImageData(prev, 0, 0)
+    document.getElementById('undoCount').textContent = app.undoStack.length
+    showGestureNotif('⟲ Undo')
+  }
+
+  p.redo = function() {
+    if (app.redoStack.length === 0) return
+    const pd = p.pixelDensity()
+    const current = p.drawingContext.getImageData(0, 0, p.width * pd, p.height * pd)
+    app.undoStack.push(current)
+    const next = app.redoStack.pop()
+    p.drawingContext.putImageData(next, 0, 0)
+    document.getElementById('undoCount').textContent = app.undoStack.length
+    showGestureNotif('⟳ Redo')
+  }
+
+  //Input handler 
+  p.handleInput = function(x, y, depth, speed) {
+    if (app.screen !== 'canvas') return
+
+    const pos  = { x, y }
+    const prev = app.posBuffer.length > 0
+      ? app.posBuffer[app.posBuffer.length - 1] : null
+
+    const opacity = app.depthOpacity && depth !== null
+      ? p.constrain(1 - (depth + 150) / 350, 0.05, 1) * app.opacityBase
+      : app.opacityBase
+
+    const w = app.velWidth && speed !== null
+      ? p.constrain(speed / 80, 0.5, 14) * app.sizeMultiplier
+      : 3 * app.sizeMultiplier
+
+    // Eraser mode
+    if (app.brushMode === 'eraser') {
+      p.erase()
+      p.noStroke()
+      p.fill(255)
+      p.ellipse(x, y, w * 5, w * 5)
+      p.noErase()
+      app.posBuffer.push(pos)
+      if (app.posBuffer.length > app.BUFFER_SIZE) app.posBuffer.shift()
+      return
+    }
+
+    // Tremor detection
+    const isTremor = app.tremorMode && prev && speed !== null &&
+      speed > TREMOR_SPEED_THRESHOLD &&
+      p.dist(x, y, prev.x, prev.y) < TREMOR_DISP_THRESHOLD
+
+    if (isTremor) {
+      if (app.expressiveMode) {
+        drawExpressive(pos, speed, true)
+      } else {
+        drawTremorReframe(pos, opacity)
+      }
+      flashTremor()
+      app.posBuffer.push(pos)
+      if (app.posBuffer.length > app.BUFFER_SIZE) app.posBuffer.shift()
+      return
+    }
+
+    app.posBuffer.push(pos)
+    if (app.posBuffer.length > app.BUFFER_SIZE) app.posBuffer.shift()
+
+    if (app.posBuffer.length >= 3) {
+      if (app.expressiveMode) {
+        drawExpressive(pos, speed, false)
+      } else {
+        switch (app.brushMode) {
+          case 'smooth':   drawSmooth(app.posBuffer, w, opacity);  break
+          case 'ink':      drawInk(app.posBuffer, w, opacity);     break
+          case 'particle': drawParticle(pos, w, opacity);          break
+          case 'scatter':  drawScatter(pos, w, opacity);           break
+        }
+      }
+    }
+  }
+
+  p.endStroke = function() {
+    if (app.posBuffer.length > 0) {
+      app.strokeCount++
+      document.getElementById('strokeNum').textContent = app.strokeCount
+    }
+    app.posBuffer = []
+    app.drawing   = false
+  }
+
+  p.mapPosition = function(rawX, rawY) {
+    if (app.calibrated) {
+      return {
+        x: p.map(rawX, app.cal.minX, app.cal.maxX, 60, p.width - 60),
+        y: p.map(rawY, app.cal.minY, app.cal.maxY, p.height - 60, 60),
+      }
+    }
+    return {
+      x: p.map(rawX, -250, 250, 0, p.width),
+      y: p.map(rawY, 80, 480, p.height, 0),
+    }
+  }
+
+  // Mouse events 
+  p.mousePressed = (event) => {
+    if (event && event.target && event.target.tagName !== 'CANVAS') return
+    if (app.screen !== 'canvas' || app.leapHandPresent) return
+    if (p.mouseY < 48) return
+    if (app.menuOpen && p.mouseX < 228) return
+    _mt = 0
+    p.snapshot()
+    app.drawing   = true
+    app.posBuffer = []
+  }
+
+  p.mouseDragged = () => {
+    if (app.screen !== 'canvas' || !app.drawing || app.leapHandPresent) return
+    if (p.mouseY < 48) return
+    if (app.menuOpen && p.mouseX < 228) return
+    const { x, y } = applySimTremor(p.mouseX, p.mouseY)
+    const speed     = calcMouseSpeed(x, y)
+    p.handleInput(x, y, null, speed)
+  }
+
+  p.mouseReleased = () => p.endStroke()
+
+  p.saveArtwork = function() {
+    p.saveCanvas(`motioncavas-iter3-${Date.now()}`, 'png')
+    // Flash overlay
+    const fl = document.getElementById('saveFlash')
+    fl.classList.remove('flash')
+    void fl.offsetWidth
+    fl.classList.add('flash')
+    showGestureNotif('✓ Artwork saved')
+  }
+
+  p.clearCanvas = function(bg) {
+    p.snapshot()
+    const c = bg || (document.body.classList.contains('light') ? [242,237,232] : [14,13,12])
+    p.background(c[0], c[1], c[2])
+    app.strokeCount = 0
+    document.getElementById('strokeNum').textContent = '0'
+    app.posBuffer = []
+  }
+}
+
+const myp5 = new p5(sketch)
+
+//Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (app.screen !== 'canvas') return
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault(); myp5.undo()
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    e.preventDefault(); myp5.redo()
+  }
+  if (e.key === 'e' || e.key === 'E') {
+    const btns = document.querySelectorAll('.brush-btn')
+    btns.forEach(b => b.classList.remove('active'))
+    const eb = document.querySelector('[data-brush="eraser"]')
+    if (eb) eb.classList.add('active')
+    app.brushMode = 'eraser'
+  }
+})
+
+//Tremor flash 
+let _tremorTimer = null
+function flashTremor() {
+  const el = document.getElementById('tremorFlash')
+  el.classList.add('visible')
+  clearTimeout(_tremorTimer)
+  _tremorTimer = setTimeout(() => el.classList.remove('visible'), 200)
+}
+
+// Gesture notification 
+let _gestureTimer = null
+function showGestureNotif(text) {
+  const el = document.getElementById('gestureNotif')
+  el.textContent = text
+  el.classList.add('visible')
+  clearTimeout(_gestureTimer)
+  _gestureTimer = setTimeout(() => el.classList.remove('visible'), 1400)
+}
+
+// Screen transitions
+function showScreen(name) {
+  app.screen = name
+  document.getElementById('onboarding').classList.toggle('hidden', name !== 'onboarding')
+  document.getElementById('calibration').classList.toggle('hidden', name !== 'calibration')
+  document.getElementById('ui').classList.toggle('hidden', name !== 'canvas')
+  if (name === 'canvas' && !_lightMode) {
+    _lightMode = true
+    document.body.classList.add('light')
+    document.getElementById('themeBtn').textContent = 'Dark mode'
+    myp5.clearCanvas([242, 237, 232])
+  }
+}
+
+//Calibration
+function startCalibration() {
+  showScreen('calibration')
+  try { connectLeap() } catch(e) {}
+  cal.active    = true
+  cal.countdown = 10
+  app.cal       = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity }
+
+  const vizCanvas = document.getElementById('vizCanvas')
+  cal.vizCtx = vizCanvas.getContext('2d')
+  cal.vizCtx.fillStyle = '#1a1714'
+  cal.vizCtx.fillRect(0, 0, 280, 180)
+
+  document.getElementById('calSuccess').classList.remove('visible')
+  document.getElementById('vizLabel').textContent = 'detecting range'
+
+  const ring = document.getElementById('timerRing')
+  ring.style.transition = 'none'
+  ring.style.strokeDashoffset = '0'
+  document.getElementById('timerNum').textContent = '10'
+
+  if (cal.interval) clearInterval(cal.interval)
+  cal.interval = setInterval(() => {
+    cal.countdown--
+    document.getElementById('timerNum').textContent = cal.countdown
+    requestAnimationFrame(() => {
+      ring.style.transition = 'stroke-dashoffset 1s linear'
+      ring.style.strokeDashoffset = 213 * ((10 - cal.countdown) / 10)
+    })
+    if (cal.countdown <= 0) {
+      clearInterval(cal.interval)
+      cal.active = false
+      if (app.cal.maxX > app.cal.minX) {
+        app.calibrated = true
+        document.getElementById('calStatus').textContent = 'calibrated ✓'
+        // Show success state
+        document.getElementById('calSuccess').classList.add('visible')
+        document.getElementById('vizLabel').textContent = 'range mapped ✓'
+      }
+      setTimeout(() => showScreen('canvas'), 1200)
+    }
+  }, 1000)
+}
+
+function observeCalPoint(screenX, screenY) {
+  if (!cal.active) return
+  app.cal.minX = Math.min(app.cal.minX, screenX)
+  app.cal.maxX = Math.max(app.cal.maxX, screenX)
+  app.cal.minY = Math.min(app.cal.minY, screenY)
+  app.cal.maxY = Math.max(app.cal.maxY, screenY)
+
+  if (!cal.vizCtx) return
+  const vx = (screenX / window.innerWidth) * 280
+  const vy = (screenY / window.innerHeight) * 180
+  cal.vizCtx.beginPath()
+  cal.vizCtx.arc(vx, vy, 2, 0, Math.PI * 2)
+  cal.vizCtx.fillStyle = 'rgba(232,160,48,0.6)'
+  cal.vizCtx.fill()
+
+  if (app.cal.maxX > app.cal.minX) {
+    const x1 = (app.cal.minX / window.innerWidth) * 280
+    const y1 = (app.cal.minY / window.innerHeight) * 180
+    const bw = ((app.cal.maxX - app.cal.minX) / window.innerWidth) * 280
+    const bh = ((app.cal.maxY - app.cal.minY) / window.innerHeight) * 180
+    cal.vizCtx.fillStyle = '#1a1714'
+    cal.vizCtx.fillRect(0, 0, 280, 180)
+    cal.vizCtx.strokeStyle = 'rgba(232,160,48,0.4)'
+    cal.vizCtx.lineWidth = 1
+    cal.vizCtx.strokeRect(x1, y1, bw, bh)
+    cal.vizCtx.beginPath()
+    cal.vizCtx.arc(vx, vy, 3, 0, Math.PI * 2)
+    cal.vizCtx.fillStyle = 'rgba(232,160,48,0.9)'
+    cal.vizCtx.fill()
+  }
+}
+
+window.addEventListener('mousemove', (e) => {
+  if (!cal.active) return
+  observeCalPoint(e.clientX, e.clientY)
+})
+
+// Leap Motion 
+// Gesture detection state
+let _leapVelHistory = []
+let _leapPinchHistory = []
+let _leapTapHistory = []
+let _leapSwipeCooldown = 0
+
+function detectLeapGestures(hand) {
+  const vel = hand.palmVelocity
+  const now = performance.now()
+
+  // Cooldown
+  if (_leapSwipeCooldown > now) return
+  
+  // SWIPE LEFT: strong negative X velocity
+  if (vel[0] < -600) {
+    _leapSwipeCooldown = now + 800
+    myp5.undo()
+    showGestureNotif('← Swipe: Undo')
+    return
+  }
+
+  // SWIPE RIGHT: strong positive X velocity
+  if (vel[0] > 600) {
+    _leapSwipeCooldown = now + 800
+    myp5.redo()
+    showGestureNotif('→ Swipe: Redo')
+    return
+  }
+
+  // PINCH: grab strength > 0.8
+  if (hand.grabStrength > 0.8 && !app.leap.pinching) {
+    app.leap.pinching = true
+    _leapSwipeCooldown = now + 600
+    document.getElementById('customColour').click()
+    showGestureNotif('✦ Pinch: Colour picker')
+  } else if (hand.grabStrength < 0.3) {
+    app.leap.pinching = false
+  }
+
+  // DOUBLE TAP: detect rapid Z velocity reversal (tap gesture)
+  const vz = vel[2]
+  _leapTapHistory.push({ vz, t: now })
+  _leapTapHistory = _leapTapHistory.filter(h => now - h.t < 400)
+  if (_leapTapHistory.length >= 2) {
+    const hasForward  = _leapTapHistory.some(h => h.vz < -300)
+    const hasBackward = _leapTapHistory.some(h => h.vz >  300)
+    if (hasForward && hasBackward) {
+      const lastTap = app.leap.lastTapTime || 0
+      if (now - lastTap < 600) {
+        // Double tap
+        _leapSwipeCooldown = now + 1000
+        app.leap.lastTapTime = 0
+        _leapTapHistory = []
+        myp5.saveArtwork()
+        showGestureNotif('✓ Double tap: Saved!')
+      } else {
+        app.leap.lastTapTime = now
+      }
+      _leapTapHistory = []
+    }
+  }
+}
+
+function updateLeapStatus(connected) {
+  const dot = document.getElementById('leapDot')
+  const pill = document.getElementById('modePill')
+  const display = document.getElementById('modeDisplay')
+  const btn = document.getElementById('leapBtn')
+
+  if (connected) {
+    dot.classList.add('connected')
+    pill.innerHTML = '<span class="leap-dot connected"></span>Leap Motion'
+    pill.classList.add('leap')
+    display.textContent = 'leap motion'
+    btn.textContent = 'Disconnect'
+  } else {
+    dot.classList.remove('connected')
+    pill.innerHTML = '<span class="leap-dot"></span>Mouse'
+    pill.classList.remove('leap')
+    display.textContent = 'mouse mode'
+    btn.textContent = 'Connect Leap'
+  }
+}
+
+let _tfLastPos3 = null
+let _tfInitialized3 = false
+
+function disconnectLeap() {
+  app.leapConnected = false
+  app.leapHandPresent = false
+  _tfLastPos3 = null
+  myp5.endStroke()
+  updateLeapStatus(false)
+}
+
+function connectLeap() {
+  if (_tfInitialized3) { app.leapConnected = true; updateLeapStatus(true); return }
+  _tfInitialized3 = true
+  TouchFree.Init({ initialiseCursor: false })
+  TouchFree.RegisterEventCallback('WhenConnected', () => { app.leapConnected = true; updateLeapStatus(true) })
+  TouchFree.RegisterEventCallback('HandFound', () => { app.leapHandPresent = true })
+  TouchFree.RegisterEventCallback('HandsLost', () => { app.leapHandPresent = false; _tfLastPos3 = null; myp5.endStroke() })
+  TouchFree.RegisterEventCallback('TransmitInputAction', (action) => {
+    if (!app.leapHandPresent) return
+    const x = action.CursorPosition[0]
+    const y = action.CursorPosition[1]
+    if (cal.active) { observeCalPoint(x, y); return }
+    let speed = 0
+    if (_tfLastPos3) { const dx = x - _tfLastPos3[0]; const dy = y - _tfLastPos3[1]; speed = Math.sqrt(dx*dx + dy*dy) * 60 }
+    _tfLastPos3 = [x, y]
+    const depth = -action.DistanceFromScreen
+    if (!app.drawing) { myp5.snapshot(); app.drawing = true }
+    myp5.handleInput(x, y, depth, speed)
+  })
+}
+
+// Saved custom colours 
+function renderSavedColours() {
+  const grid = document.getElementById('savedColoursGrid')
+  const label = document.getElementById('savedColoursLabel')
+  grid.innerHTML = ''
+  if (app.savedColours.length === 0) {
+    label.style.display = 'none'
+    return
+  }
+  label.style.display = 'block'
+  app.savedColours.forEach((c, i) => {
+    const hex = `#${c.r.toString(16).padStart(2,'0')}${c.g.toString(16).padStart(2,'0')}${c.b.toString(16).padStart(2,'0')}`
+    const sw = document.createElement('div')
+    sw.className = 'saved-swatch'
+    sw.style.background = hex
+    sw.title = hex
+    const del = document.createElement('div')
+    del.className = 'del-x'
+    del.textContent = '×'
+    del.addEventListener('click', (e) => {
+      e.stopPropagation()
+      app.savedColours.splice(i, 1)
+      renderSavedColours()
+    })
+    sw.appendChild(del)
+    sw.addEventListener('click', () => {
+      app.colour = { r: c.r, g: c.g, b: c.b }
+      document.getElementById('customColour').value = hex
+      document.querySelectorAll('.colour-swatch').forEach(s => s.classList.remove('active'))
+      document.querySelectorAll('.saved-swatch').forEach(s => s.style.outline = '')
+      sw.style.outline = '2px solid var(--text)'
+    })
+    grid.appendChild(sw)
+  })
+}
+
+document.getElementById('saveColourBtn').addEventListener('click', () => {
+  const c = app.colour
+  // avoid dupes
+  const exists = app.savedColours.some(s => s.r === c.r && s.g === c.g && s.b === c.b)
+  if (!exists && app.savedColours.length < 12) {
+    app.savedColours.push({ ...c })
+    renderSavedColours()
+  }
+})
+
+//Auto demo 
+let _demoInterval = null
+let _demoRunning  = false
+let _demoSpeed    = 1
+
+function startAutoDemo() {
+  if (_demoRunning) { stopAutoDemo(); return }
+
+  if (!app.tremorMode) {
+    app.tremorMode = true
+    document.getElementById('tremorToggle').classList.add('on')
+  }
+
+  _demoRunning = true
+  document.getElementById('autoDemoBtn').textContent = 'Stop demo'
+  document.getElementById('autoDemoBtn').style.color = 'var(--accent2)'
+  document.getElementById('autoDemoBtn').style.borderColor = 'var(--accent2)'
+
+  const w = myp5.width, h = myp5.height
+  let x = w * 0.3, y = h * 0.5
+  let phase = 0, strokePhase = 0
+  app.posBuffer = []
+
+  _demoInterval = setInterval(() => {
+    const spd = _demoSpeed
+    strokePhase += 0.018 * spd
+    const inTremor = Math.sin(strokePhase * 0.9) > 0.1
+
+    if (inTremor) {
+      x += (Math.random() - 0.5) * 5 * app.tremorIntensity
+      y += (Math.random() - 0.5) * 5 * app.tremorIntensity
+      x = Math.max(w * 0.1, Math.min(w * 0.9, x))
+      y = Math.max(h * 0.1, Math.min(h * 0.9, y))
+      myp5.handleInput(x, y, null, TREMOR_SPEED_THRESHOLD * 1.6)
+    } else {
+      x += Math.cos(phase) * 2.5 * spd
+      y += Math.sin(phase * 0.6) * 1.8 * spd
+      phase += 0.035 * spd
+      x = Math.max(w * 0.1, Math.min(w * 0.9, x))
+      y = Math.max(h * 0.1, Math.min(h * 0.9, y))
+      myp5.handleInput(x, y, null, 80)
+    }
+  }, 16)
+}
+
+function stopAutoDemo() {
+  clearInterval(_demoInterval)
+  _demoRunning = false
+  myp5.endStroke()
+  document.getElementById('autoDemoBtn').textContent = 'Run auto demo'
+  document.getElementById('autoDemoBtn').style.color = ''
+  document.getElementById('autoDemoBtn').style.borderColor = ''
+}
+
+//UI wiring 
+
+document.getElementById('calibrateStartBtn').addEventListener('click', startCalibration)
+document.getElementById('skipCalBtn').addEventListener('click', () => showScreen('canvas'))
+document.getElementById('recalBtn').addEventListener('click', startCalibration)
+
+document.getElementById('leapBtn').addEventListener('click', () => {
+  if (app.leapConnected) disconnectLeap(); else connectLeap()
+})
+
+document.getElementById('menuBtn').addEventListener('click', () => {
+  app.menuOpen = !app.menuOpen
+  document.getElementById('sidepanel').classList.toggle('open', app.menuOpen)
+})
+
+document.getElementById('colourGrid').addEventListener('click', (e) => {
+  const sw = e.target.closest('.colour-swatch')
+  if (!sw) return
+  document.querySelectorAll('.colour-swatch').forEach(s => s.classList.remove('active'))
+  document.querySelectorAll('.saved-swatch').forEach(s => s.style.outline = '')
+  sw.classList.add('active')
+  app.colour = { r: +sw.dataset.r, g: +sw.dataset.g, b: +sw.dataset.b }
+})
+
+document.getElementById('customColour').addEventListener('input', (e) => {
+  const hex = e.target.value
+  app.colour = {
+    r: parseInt(hex.slice(1,3), 16),
+    g: parseInt(hex.slice(3,5), 16),
+    b: parseInt(hex.slice(5,7), 16),
+  }
+  document.querySelectorAll('.colour-swatch').forEach(s => s.classList.remove('active'))
+  document.querySelectorAll('.saved-swatch').forEach(s => s.style.outline = '')
+})
+
+document.getElementById('sizeSlider').addEventListener('input', (e) => {
+  app.sizeMultiplier = parseFloat(e.target.value)
+  document.getElementById('sizeVal').textContent = app.sizeMultiplier.toFixed(1) + '×'
+})
+
+document.getElementById('opacitySlider').addEventListener('input', (e) => {
+  app.opacityBase = parseFloat(e.target.value) / 100
+  document.getElementById('opacityVal').textContent = e.target.value + '%'
+})
+
+document.getElementById('brushGrid').addEventListener('click', (e) => {
+  const btn = e.target.closest('.brush-btn')
+  if (!btn) return
+  document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  app.brushMode = btn.dataset.brush
+})
+
+document.getElementById('tremorToggle').addEventListener('click', () => {
+  app.tremorMode = !app.tremorMode
+  document.getElementById('tremorToggle').classList.toggle('on', app.tremorMode)
+})
+
+document.getElementById('tremorIntensitySlider').addEventListener('input', (e) => {
+  app.tremorIntensity = parseFloat(e.target.value)
+  const v = app.tremorIntensity.toFixed(1)
+  document.getElementById('tremorIntensityVal').textContent = v
+  document.getElementById('intensityReadout').textContent = v
+  const pct = ((app.tremorIntensity - 0.2) / (3 - 0.2)) * 100
+  document.getElementById('intensityFill').style.width = pct + '%'
+})
+
+document.getElementById('simToggle').addEventListener('click', () => {
+  app.simTremor = !app.simTremor
+  document.getElementById('simToggle').classList.toggle('on', app.simTremor)
+  if (app.simTremor && !app.tremorMode) {
+    app.tremorMode = true
+    document.getElementById('tremorToggle').classList.add('on')
+  }
+})
+
+document.getElementById('velToggle').addEventListener('click', () => {
+  app.velWidth = !app.velWidth
+  document.getElementById('velToggle').classList.toggle('on', app.velWidth)
+})
+
+document.getElementById('depthToggle').addEventListener('click', () => {
+  app.depthOpacity = !app.depthOpacity
+  document.getElementById('depthToggle').classList.toggle('on', app.depthOpacity)
+})
+
+document.getElementById('autoDemoBtn').addEventListener('click', startAutoDemo)
+
+document.getElementById('demoSpeedSlider').addEventListener('input', (e) => {
+  _demoSpeed = parseFloat(e.target.value)
+  document.getElementById('demoSpeedVal').textContent = _demoSpeed + '×'
+})
+
+// Expressive mode toggle
+document.getElementById('expressiveToggle').addEventListener('click', () => {
+  app.expressiveMode = !app.expressiveMode
+  document.getElementById('expressiveToggle').classList.toggle('on', app.expressiveMode)
+  document.getElementById('expressiveBadge').classList.toggle('visible', app.expressiveMode)
+  document.getElementById('expressiveProps').classList.toggle('visible', app.expressiveMode)
+  if (app.expressiveMode && !app.tremorMode) {
+    app.tremorMode = true
+    document.getElementById('tremorToggle').classList.add('on')
+  }
+})
+
+// Undo and redo buttons
+document.getElementById('undoBtn').addEventListener('click', () => myp5.undo())
+document.getElementById('redoBtn').addEventListener('click', () => myp5.redo())
+document.getElementById('clearTopBtn').addEventListener('click', () => myp5.clearCanvas())
+document.getElementById('undoPanelBtn').addEventListener('click', () => myp5.undo())
+
+// Theme toggle
+document.getElementById('themeBtn').addEventListener('click', () => {
+  _lightMode = !_lightMode
+  document.body.classList.toggle('light', _lightMode)
+  document.getElementById('themeBtn').textContent = _lightMode ? 'Dark mode' : 'Light mode'
+  const bg = _lightMode ? [242, 237, 232] : [14, 13, 12]
+  myp5.clearCanvas(bg)
+})
+
+document.getElementById('saveBtn').addEventListener('click', () => myp5.saveArtwork())
+document.getElementById('clearBtn').addEventListener('click', () => myp5.clearCanvas())
+
+connectLeap()
+</script>
+</body>
+</html>
