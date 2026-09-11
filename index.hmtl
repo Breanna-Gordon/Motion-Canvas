@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotionCanvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0d0c;
+    --warm: #1a1714;
+    --border: #2a2520;
+    --text: #e8e0d5;
+    --muted: #5a5248;
+    --accent: #7ab8c8;
+    --accent-dim: rgba(122,184,200,0.08);
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    line-height: 1.6;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 72px 32px 100px;
+  }
+
+  /* ---------- header ---------- */
+  .logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 48px;
+    font-style: italic;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .logo-sub {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .intro {
+    font-family: 'Instrument Serif', serif;
+    font-size: 19px;
+    font-style: italic;
+    color: var(--text);
+    opacity: 0.9;
+    max-width: 46ch;
+    margin-bottom: 12px;
+  }
+
+  .intro-small {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    max-width: 52ch;
+    margin-bottom: 56px;
+  }
+
+  /* ---------- sections ---------- */
+  section { margin-bottom: 48px; }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+
+  /* ---------- entry rows (iterations + demos) ---------- */
+  .entry {
+    display: block;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .entry:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .entry-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .entry-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--text);
+  }
+
+  .entry-tag {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .entry-desc {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  /* ---------- documentation grid ---------- */
+  .doc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .doc-item {
+    border: 1px solid var(--border);
+    overflow: hidden;
+    text-decoration: none;
+    display: block;
+  }
+
+  .doc-item img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(0.2);
+    transition: filter 0.15s ease;
+  }
+
+  .doc-item:hover img { filter: grayscale(0); }
+
+  .doc-caption {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  footer {
+    font-size: 10px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    line-height: 1.8;
+  }
+
+  footer a { border-bottom: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="logo">MotionCanvas</div>
+  <div class="logo-sub">DPR</div>
+
+  <p class="intro">Movement as the brush — reframing hand tremor as expressive texture rather than noise to correct.</p>
+  <p class="intro-small">Built across three iterations with p5.js and Leap Motion hand tracking. Browse the working builds below, or jump to the tremor-reframing comparison demo.</p>
+
+  <section>
+    <div class="section-label">Iterations</div>
+
+    <a class="entry" href="code/iteration1/index.html">
+      <div class="entry-top">
+        <span class="entry-title">Iteration 1</span>
+        <span class="entry-tag">early build</span>
+      </div>
+      <div class="entry-desc">Swap in a short line on what this iteration explored before iteration 2.</div>
+    </a>
+
+    <a class="entry" href="code/iteration2/index.html">
+      <div class="entry-top">
+        <span class="entry-title">Iteration 2</span>
+        <span class="entry-tag">onboarding · calibration · brushes</span>
+      </div>
+      <div class="entry-desc">Full app: onboarding flow, hand-range calibration, four brush modes, tremor reframe toggle with adjustable intensity, Leap Motion + mouse fallback.</div>
+    </a>
+
+    <a class="entry" href="code/iteration3/index.html">
+      <div class="entry-top">
+        <span class="entry-title">Iteration 3</span>
+        <span class="entry-tag">latest</span>
+      </div>
+      <div class="entry-desc">Swap in a short line on what changed in this iteration.</div>
+    </a>
+  </section>
+
+  <section>
+    <div class="section-label">Demos</div>
+
+    <a class="entry" href="code/demos/index.html">
+      <div class="entry-top">
+        <span class="entry-title">Tremor Reframing — Comparison</span>
+        <span class="entry-tag">side-by-side</span>
+      </div>
+      <div class="entry-desc">Same input feeds two panels at once: raw output (tremor reads as a jagged line) versus reframed output (tremor reads as cross-hatch texture). Includes an auto-simulate mode.</div>
+    </a>
+  </section>
+
+  <section>
+    <div class="section-label">Documentation</div>
+    <div class="doc-grid">
+      <a class="doc-item" href="design/moodboard.png" target="_blank">
+        <img src="design/moodboard.png" alt="Moodboard">
+        <div class="doc-caption">Moodboard</div>
+      </a>
+      <a class="doc-item" href="design/Storyboard.png" target="_blank">
+        <img src="design/Storyboard.png" alt="Storyboard">
+        <div class="doc-caption">Storyboard</div>
+      </a>
+      <a class="doc-item" href="design/NEWW%20Storyboard.png" target="_blank">
+        <img src="design/NEWW%20Storyboard.png" alt="Revised storyboard">
+        <div class="doc-caption">Storyboard (revised)</div>
+      </a>
+      <a class="doc-item" href="design/system%20overview%20diagram.png" target="_blank">
+        <img src="design/system%20overview%20diagram.png" alt="System overview diagram">
+        <div class="doc-caption">System overview diagram</div>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    Full write-up in <a href="README.md">README.md</a> · repo root, alongside this file.
+  </footer>
+
+</div>
+
+</body>
+</html>
