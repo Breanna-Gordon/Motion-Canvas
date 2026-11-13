@@ -63,6 +63,7 @@ ul{padding-left:22px;margin:0 0 16px} li{margin:6px 0}
 .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .gallery figure{margin:0;min-width:0}
 figure img{display:block;width:100%;height:auto;border:1px solid var(--line);background:var(--well)}
+video{display:block;width:100%;height:auto;background:#0d0d0d;border:1px solid var(--line)}
 .try{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:24px 0;font:15px/1.4 var(--sans)}
 .try a{display:block;border:1px solid var(--line);padding:14px 16px;color:var(--ink);text-decoration:none}
 .try a:hover{border-color:var(--accent)}
@@ -157,6 +158,10 @@ figure img{display:block;width:100%;height:auto;border:1px solid var(--line);bac
         <p><b>Changed</b>Move to p5.js for easier brushes and animation. Add onboarding and calibration. Build real tremor detection. Give the app its own visual identity.</p>
       </div>
     </div>
+    <figure>
+      <video controls preload="metadata" playsinline src="https://breanna-gordon.github.io/Motion-Canvas/media/iteration-1.mp4"></video>
+      <figcaption>Iteration 1 walkthrough.</figcaption>
+    </figure>
     <div class="iter">
       <div class="n">2</div>
       <div>
@@ -166,6 +171,10 @@ figure img{display:block;width:100%;height:auto;border:1px solid var(--line);bac
         <p><b>Changed</b>Add multi-step undo and redo, label the tremor reframe, show live sensor status, group the panel, and theme the whole interface.</p>
       </div>
     </div>
+    <figure>
+      <video controls preload="metadata" playsinline src="https://breanna-gordon.github.io/Motion-Canvas/media/iteration-2.mp4"></video>
+      <figcaption>Iteration 2 walkthrough: onboarding, calibration and the four brushes.</figcaption>
+    </figure>
     <div class="iter">
       <div class="n">3</div>
       <div>
@@ -175,11 +184,19 @@ figure img{display:block;width:100%;height:auto;border:1px solid var(--line);bac
         <p><b>Next</b>Test with users who have motor differences, add audio feedback, and test gesture detection properly with real hand movement.</p>
       </div>
     </div>
+    <figure>
+      <video controls preload="metadata" playsinline src="https://breanna-gordon.github.io/Motion-Canvas/media/iteration-3.mp4"></video>
+      <figcaption>Iteration 3 walkthrough: undo and redo, the labelled tremor panel and hover-and-hold.</figcaption>
+    </figure>
 
     <div class="gallery">
       <figure><img src="https://breanna-gordon.github.io/Motion-Canvas/sketches/iteration1.png" alt="Iteration 1 sketch" loading="lazy"><figcaption>Iteration 1 sketch</figcaption></figure>
       <figure><img src="https://breanna-gordon.github.io/Motion-Canvas/sketches/iteration2%20canvas.png" alt="Iteration 2 canvas sketch" loading="lazy"><figcaption>Iteration 2 canvas sketch</figcaption></figure>
       <figure><img src="https://breanna-gordon.github.io/Motion-Canvas/sketches/iteration%203%20canvas.png" alt="Iteration 3 canvas sketch" loading="lazy"><figcaption>Iteration 3 canvas sketch</figcaption></figure>
+    </div>
+    <div class="gallery">
+      <figure><img src="https://breanna-gordon.github.io/Motion-Canvas/media/iteration-2-canvas-screenshot.png" alt="Iteration 2 canvas: two trees drawn in pink and brown with the particle brush" loading="lazy"><figcaption>Iteration 2 canvas, drawn with the particle brush</figcaption></figure>
+      <figure><img src="https://breanna-gordon.github.io/Motion-Canvas/media/iteration-2-calibration-screenshot.png" alt="Iteration 2 calibration screen: Show us how you move, with a 10 second countdown" loading="lazy"><figcaption>Iteration 2 calibration screen</figcaption></figure>
     </div>
     <p class="cap" style="font:14px/1.5 var(--sans);color:var(--soft);margin-top:8px">Sketches from each iteration. Start screen, calibration and Figma sketches are on the <a href="https://breanna-gordon.github.io/Motion-Canvas/">project page</a>.</p>
   </section>
@@ -198,15 +215,15 @@ figure img{display:block;width:100%;height:auto;border:1px solid var(--line);bac
     </div>
     <h4>Mid-air drawing</h4>
     <p>Leap Motion hand tracking, connected through the TouchFree SDK, lets users draw without holding or touching anything. Hover-and-hold selection lets users pick tools without touching anything, and a mouse fallback keeps the app usable without the sensor.</p>
+    <figure>
+      <a href="https://breanna-gordon.github.io/Motion-Canvas/code/demos/tremor-comparison.html"><img src="https://breanna-gordon.github.io/Motion-Canvas/media/tremor-comparison-screenshot.png" alt="Tremor comparison demo: raw output on the left, cross-hatch reframed output on the right" loading="lazy"></a>
+      <figcaption>The comparison demo. Same movement, drawn raw on the left and reframed as cross-hatch on the right.</figcaption>
+    </figure>
     <div class="try">
       <a href="https://breanna-gordon.github.io/Motion-Canvas/code/demos/tremor-comparison.html"><span>Try it</span>Tremor comparison demo, side by side</a>
       <a href="https://breanna-gordon.github.io/Motion-Canvas/code/iteration3/index.html"><span>Try it</span>Iteration 3, the final prototype</a>
       <a href="https://breanna-gordon.github.io/Motion-Canvas/code/iteration1/index.html"><span>Compare</span>Iteration 1, the early build</a>
     </div>
-    <figure>
-      <div class="shot" role="img" aria-label="Placeholder for finished drawings">Add: 2 or 3 finished drawings made with the tool</div>
-      <figcaption>Artwork created with MotionCanvas.</figcaption>
-    </figure>
   </section>
 
   <section id="outcome">
