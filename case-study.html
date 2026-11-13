@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MotionCanvas UX Case Study | Breanna Gordon</title>
+<meta name="description" content="UX case study: a hand-tracking drawing tool for adults with motor differences.">
+<style>
+/* Layout: paper-toned long read, big serif title over a live cross-hatch texture, numbered sections that really are a sequence, iterations as a ladder. */
+:root{
+  --ink:#1b1b1f; --soft:#5a5a66; --line:#d9d6cf; --paper:#f7f4ee; --accent:#c4462b; --accent-soft:#f1d9cf; --well:#efebe3; --dash:#b9b3a7;
+  --hatch-a:rgba(27,27,31,.28); --hatch-b:rgba(196,70,43,.55);
+  --max:760px; color-scheme:light;
+  --serif:Georgia,"Times New Roman",serif; --sans:"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.65 var(--serif);
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+.wrap{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+nav{max-width:1100px;margin:0 auto;padding-block:22px;display:flex;justify-content:space-between;gap:16px;
+  font:14px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase}
+nav a{color:var(--ink);text-decoration:none}
+nav a:hover{color:var(--accent)}
+header{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+#hatch{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+.hero{position:relative;max-width:1100px;margin:0 auto;padding-block:80px 60px}
+.kicker{font:600 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(44px,8vw,96px);line-height:.95;margin:14px 0 18px;font-weight:400;letter-spacing:-.02em;overflow-wrap:anywhere}
+.lede{max-width:620px;font-size:22px;margin:0}
+.meta{position:relative;max-width:1100px;margin:0 auto;padding-bottom:40px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px 32px;font:15px/1.45 var(--sans)}
+.meta div{min-width:0}
+.meta dt{color:var(--soft);font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.meta dd{margin:0}
+main{max-width:calc(var(--max) + 48px);margin:0 auto;padding-block:30px 60px}
+section{padding-block:46px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+h2{font:600 14px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin:0 0 10px}
+h3{font-size:clamp(24px,4.5vw,30px);font-weight:400;line-height:1.2;margin:0 0 18px;text-wrap:balance}
+h4{font:600 17px/1.3 var(--sans);margin:28px 0 6px}
+p{margin:0 0 16px}
+.todo{background:var(--accent-soft);padding:0 4px;border-radius:2px}
+figure{margin:30px 0}
+.shot{aspect-ratio:16/9;max-width:100%;border:1px dashed var(--dash);display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:20px;color:var(--soft);font:15px/1.4 var(--sans);background:var(--well)}
+figcaption{font:14px/1.5 var(--sans);color:var(--soft);margin-top:8px}
+.iter{display:grid;grid-template-columns:70px minmax(0,1fr);gap:6px 18px;margin:34px 0}
+.iter .n{font-size:44px;line-height:1;color:var(--accent)}
+.iter .when{font:13px/1.4 var(--sans);color:var(--soft);margin:0 0 6px;letter-spacing:.04em}
+.iter p{margin:4px 0}
+.iter b{font:600 13px/1.6 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-right:6px}
+blockquote{margin:28px 0;padding-left:20px;border-left:3px solid var(--accent);font-size:23px;line-height:1.4}
+ul{padding-left:22px;margin:0 0 16px} li{margin:6px 0}
+.spec{font:15px/1.5 var(--sans);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:24px 0}
+.spec div{min-width:0;border:1px solid var(--line);padding:14px 16px}
+.spec b{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);margin-bottom:4px}
+.spec code{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.next{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;max-width:calc(var(--max) + 48px);margin:0 auto;padding-block:30px 40px;font:15px/1.4 var(--sans)}
+.next a{text-decoration:none;color:var(--ink)}
+.next a span{display:block;color:var(--soft);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.note{max-width:calc(var(--max) + 48px);margin:0 auto;padding-block:0 48px;font:14px/1.5 var(--sans);color:var(--soft)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.gallery figure{margin:0;min-width:0}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--line);background:var(--well)}
+.try{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:24px 0;font:15px/1.4 var(--sans)}
+.try a{display:block;border:1px solid var(--line);padding:14px 16px;color:var(--ink);text-decoration:none}
+.try a:hover{border-color:var(--accent)}
+.try a span{display:block;color:var(--soft);font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.trace{display:block;width:100%;height:auto;background:var(--well);border:1px solid var(--line)}
+.trace .steady{stroke:var(--soft)}
+.trace .hatch line{stroke:var(--accent)}
+.trace text{fill:var(--soft);font:13px var(--sans)}
+.trace .shiver{animation:shiver 1.6s steps(1,end) infinite}
+@keyframes shiver{0%{transform:translate(0,0)}20%{transform:translate(1.2px,-1px)}40%{transform:translate(-1px,1.2px)}60%{transform:translate(.8px,.8px)}80%{transform:translate(-1.2px,-.6px)}}
+@media (prefers-reduced-motion:reduce){.trace .shiver{animation:none}}
+@media (max-width:600px){body{font-size:17px}.hero{padding-block:56px 44px}.iter{grid-template-columns:44px minmax(0,1fr)}.iter .n{font-size:32px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav class="wrap" aria-label="Site">
+  <a href="https://breanna-gordon.github.io/Full_Portfolio/">Breanna Gordon</a>
+  <a href="https://breanna-gordon.github.io/Motion-Canvas/">Project page</a>
+</nav>
+
+<header>
+  <canvas id="hatch" aria-hidden="true"></canvas>
+  <div class="hero wrap">
+    <div class="kicker">UX case study · HCI</div>
+    <h1>MotionCanvas</h1>
+    <p class="lede">A hand-tracking drawing tool that treats tremor as a source of expressive texture, instead of an error to correct.</p>
+  </div>
+  <dl class="meta wrap">
+    <div><dt>My role</dt><dd>Technical lead: prototyping, interaction design, calibration</dd></div>
+    <div><dt>Team</dt><dd>3 students</dd></div>
+    <div><dt>Timeline</dt><dd>April to June 2026, UAL Human-Computer Interaction unit</dd></div>
+    <div><dt>Tools</dt><dd>p5.js, JavaScript, Leap Motion with the TouchFree SDK</dd></div>
+  </dl>
+</header>
+
+<main class="wrap">
+
+  <section id="problem">
+    <h2>01 · The problem</h2>
+    <h3>Most drawing tools assume a steady hand.</h3>
+    <p>Mainstream creative tools such as Adobe Fresco and Procreate assume steady, precise hand control and treat involuntary movement as an error. For people with motor differences, every stroke becomes a fight with the interface.</p>
+    <p>We asked a different question: <em>what if the tool adapted to the person, instead of the person adapting to the tool?</em> MotionCanvas treats movement as the creative material.</p>
+    <figure>
+      <svg class="trace" id="trace" viewBox="0 0 720 190" role="img" aria-label="A clean line drawn with a steady hand on the left. On the right, the same curve drawn with tremor, shown as cross-hatch marks."></svg>
+      <figcaption>The idea in one picture. Left: steady movement draws a clean stroke. Right: fast, small movements are detected as tremor and drawn as cross-hatch.</figcaption>
+    </figure>
+  </section>
+
+  <section id="users">
+    <h2>02 · Who it's for</h2>
+    <h3>Adults with motor differences who want to make art.</h3>
+    <p>The target users are adults with motor differences, including essential tremor, multiple sclerosis, cerebral palsy and limited range of motion. Three design goals came from that:</p>
+    <ul>
+      <li><strong>Expressiveness.</strong> Natural movement, including tremor, should produce engaging, intentional artwork.</li>
+      <li><strong>Adaptability.</strong> The system should fit each person's movement range, not use fixed defaults.</li>
+      <li><strong>Emotional engagement.</strong> People should feel they are using a creative tool, not an accessibility device.</li>
+    </ul>
+    <p>We could not get direct access to users. Our research was a literature review, a comparison of existing tools and a speculative storyboard. The full research, sources and evaluation are in the <a href="https://breanna-gordon.github.io/Motion-Canvas/evaluation/Group%20doc.pdf">group document</a>.</p>
+  </section>
+
+  <section id="framing">
+    <h2>03 · Research and framing</h2>
+    <h3>Designing around ability, not limitation.</h3>
+    <h4>Ability-based design</h4>
+    <p>Our main framework was Wobbrock et al. (2011): instead of asking what a user <em>can't</em> do, start from what they <em>can</em> do and make the system adapt. Hendren (2020) sharpened this for us by arguing that the tools, not the users, are the problem.</p>
+    <h4>Embodied interaction</h4>
+    <p>Dourish (2001) and Kendon (2004) treat movement as meaningful and expressive. Drawing with the whole hand in the air makes the body part of the artwork.</p>
+    <figure>
+      <a href="https://breanna-gordon.github.io/Motion-Canvas/design/NEWW%20Storyboard.png"><img src="https://breanna-gordon.github.io/Motion-Canvas/design/NEWW%20Storyboard.png" alt="Revised storyboard of someone using MotionCanvas" loading="lazy"></a>
+      <figcaption>Revised storyboard. With no direct access to users, a speculative storyboard stood in for observation.</figcaption>
+    </figure>
+    <blockquote>The key reframe: tremor isn't noise to filter out. It's a signal we can turn into texture.</blockquote>
+  </section>
+
+  <section id="process">
+    <h2>04 · Design process</h2>
+    <h3>Three iterations, each evaluated before the next.</h3>
+
+    <figure>
+      <a href="https://breanna-gordon.github.io/Motion-Canvas/design/system%20overview%20diagram.png"><img src="https://breanna-gordon.github.io/Motion-Canvas/design/system%20overview%20diagram.png" alt="System overview diagram: sensor, TouchFree SDK, calibration, tremor check and canvas" loading="lazy"></a>
+      <figcaption>System overview: sensor, TouchFree SDK, calibration, tremor check, canvas. The full set of process diagrams is in the <a href="https://breanna-gordon.github.io/Motion-Canvas/sketches/flowchart.pdf">flowchart PDF</a>.</figcaption>
+    </figure>
+
+    <div class="iter">
+      <div class="n">1</div>
+      <div>
+        <p class="when">April 2026 · HTML5 canvas, checked by a group review</p>
+        <p><b>Built</b>Mouse drawing, five colour swatches, a size slider, save and clear. The mouse stood in for the Leap sensor. A tremor button was in the interface but did nothing.</p>
+        <p><b>Learned</b>The drawing basics worked, but the tremor button was a false affordance: it looked real and changed nothing, so the central idea could not be tested. There was no onboarding or calibration, and the look was generic.</p>
+        <p><b>Changed</b>Move to p5.js for easier brushes and animation. Add onboarding and calibration. Build real tremor detection. Give the app its own visual identity.</p>
+      </div>
+    </div>
+    <div class="iter">
+      <div class="n">2</div>
+      <div>
+        <p class="when">May 2026 · full p5.js rebuild, checked by a cognitive walkthrough</p>
+        <p><b>Built</b>Onboarding, calibration with a live range display, four brushes (smooth, particle, scatter, ink), working tremor detection drawing cross-hatch, and a Simulate Tremor mode so the idea could be shown without a sensor.</p>
+        <p><b>Learned</b>No undo. No success state after calibration. A side panel that was hard to scan. The tremor idea was not explained in context, sensor status never updated, and light mode only covered the canvas.</p>
+        <p><b>Changed</b>Add multi-step undo and redo, label the tremor reframe, show live sensor status, group the panel, and theme the whole interface.</p>
+      </div>
+    </div>
+    <div class="iter">
+      <div class="n">3</div>
+      <div>
+        <p class="when">May 2026 · submission prototype, internal evaluation</p>
+        <p><b>Built</b>Undo and redo (up to 20 steps), an eraser, a Clear button, a bigger palette, light mode as the default, a panel titled "Movement - Tremor Reframe" with a numeric intensity readout, a live sensor status pill, and hover-and-hold selection through the Leap sensor.</p>
+        <p><b>Learned</b>Undo and redo fixed the biggest frustration. Naming the tremor reframe in the interface changed how clearly the tool communicates its purpose. But the Clear button has no confirmation, calibration success is only a small corner label, and hover-and-hold behaved differently from laptop to laptop.</p>
+        <p><b>Next</b>Test with users who have motor differences, add audio feedback, and test gesture detection properly with real hand movement.</p>
+      </div>
+    </div>
+
+    <div class="gallery">
+      <figure><img src="https://breanna-gordon.github.io/Motion-Canvas/sketches/iteration1.png" alt="Iteration 1 sketch" loading="lazy"><figcaption>Iteration 1 sketch</figcaption></figure>
+      <figure><img src="https://breanna-gordon.github.io/Motion-Canvas/sketches/iteration2%20canvas.png" alt="Iteration 2 canvas sketch" loading="lazy"><figcaption>Iteration 2 canvas sketch</figcaption></figure>
+      <figure><img src="https://breanna-gordon.github.io/Motion-Canvas/sketches/iteration%203%20canvas.png" alt="Iteration 3 canvas sketch" loading="lazy"><figcaption>Iteration 3 canvas sketch</figcaption></figure>
+    </div>
+    <p class="cap" style="font:14px/1.5 var(--sans);color:var(--soft);margin-top:8px">Sketches from each iteration. Start screen, calibration and Figma sketches are on the <a href="https://breanna-gordon.github.io/Motion-Canvas/">project page</a>.</p>
+  </section>
+
+  <section id="solution">
+    <h2>05 · The final design</h2>
+    <h3>Calibrate, then draw. Every movement counts.</h3>
+    <h4>Adaptive calibration</h4>
+    <p>For 10 seconds the user moves their hand through their natural range. The app records the smallest and largest positions and maps that box to the canvas, so a small range of movement can still reach the whole page.</p>
+    <h4>Tremor becomes texture</h4>
+    <p>When tremor mode is on, fast movement that stays within a tiny area is read as tremor and drawn as cross-hatch marks. Stronger tremor gives more, longer, wider marks, so the movement becomes part of the user's style.</p>
+    <div class="spec">
+      <div><b>Detected when</b><code>speed &gt; 220 px/s</code><br><code>displacement &lt; 8 px</code></div>
+      <div><b>Compared over</b>The last 3 positions</div>
+      <div><b>Marks per step</b><code>3 + intensity × 4</code></div>
+    </div>
+    <h4>Mid-air drawing</h4>
+    <p>Leap Motion hand tracking, connected through the TouchFree SDK, lets users draw without holding or touching anything. Hover-and-hold selection lets users pick tools without touching anything, and a mouse fallback keeps the app usable without the sensor.</p>
+    <div class="try">
+      <a href="https://breanna-gordon.github.io/Motion-Canvas/code/demos/tremor-comparison.html"><span>Try it</span>Tremor comparison demo, side by side</a>
+      <a href="https://breanna-gordon.github.io/Motion-Canvas/code/iteration3/index.html"><span>Try it</span>Iteration 3, the final prototype</a>
+      <a href="https://breanna-gordon.github.io/Motion-Canvas/code/iteration1/index.html"><span>Compare</span>Iteration 1, the early build</a>
+    </div>
+    <figure>
+      <div class="shot" role="img" aria-label="Placeholder for finished drawings">Add: 2 or 3 finished drawings made with the tool</div>
+      <figcaption>Artwork created with MotionCanvas.</figcaption>
+    </figure>
+  </section>
+
+  <section id="outcome">
+    <h2>06 · Outcome and reflection</h2>
+    <h3>What worked, and what I'd do next.</h3>
+    <p class="todo">[Add the outcome: grade, tutor feedback or reactions to the demo. Only what actually happened.]</p>
+    <h4>Limits I want to be upfront about</h4>
+    <ul>
+      <li>Iterations 2 and 3 used a Simulate Tremor toggle. It does not reflect real essential tremor, MS or cerebral palsy movement, so the detection has not been validated against real users.</li>
+      <li>Hover-and-hold with the Leap sensor worked on some laptops and not others, and gesture detection was not fully tested with real hand movement. Mouse mode was fully tested.</li>
+    </ul>
+    <h4>What I learned as technical lead</h4>
+    <ul>
+      <li>How to turn a design principle, ability-based design, into concrete technical decisions such as calibration.</li>
+      <li>That hardware differs between machines. A design that works on one laptop can fail on another, so a fallback input mattered.</li>
+      <li>How much accuracy matters. When I checked our process diagrams against the code, I found real mistakes: the sensor connects through the TouchFree SDK, calibration is a bounding box and not a matrix, and the tremor logic only runs when tremor mode is on.</li>
+    </ul>
+    <h4>If I had more time</h4>
+    <ul>
+      <li>Run co-design sessions with adults who have motor differences, before adding more features.</li>
+      <li>Add audio feedback, so the tool works as more than a visual interface.</li>
+      <li>Add a confirmation step to the Clear button, and a clearer calibration success message.</li>
+    </ul>
+    <p>The full builds, storyboards and evaluation documents are on the <a href="https://breanna-gordon.github.io/Motion-Canvas/">project page</a>.</p>
+  </section>
+
+</main>
+
+<div class="next wrap">
+  <a href="https://breanna-gordon.github.io/Full_Portfolio/"><span>Back</span>All projects</a>
+  <a href="https://breanna-gordon.github.io/Motion-Canvas/"><span>Next</span>Builds, demo and documents →</a>
+</div>
+
+<p class="note wrap">The header texture is drawn live by a small canvas script, echoing MotionCanvas's cross-hatch marks.</p>
+
+<script>
+(function(){
+  var svg=document.getElementById('trace');if(!svg)return;
+  var ns='http://www.w3.org/2000/svg',seed=7;
+  function r(){seed=(seed*16807)%2147483647;return seed/2147483647}
+  function el(p,n,a){var e=document.createElementNS(ns,n);for(var k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
+  var d='M30 120',x;
+  for(x=30;x<=340;x+=10)d+=' L'+x+' '+(120-40*Math.sin((x-30)/310*Math.PI*1.2)).toFixed(1);
+  el(svg,'path',{d:d,fill:'none','class':'steady','stroke-width':4,'stroke-linecap':'round','stroke-linejoin':'round'});
+  var g=el(svg,'g',{'class':'hatch shiver'});
+  for(x=380;x<=690;x+=7){
+    var cy=120-40*Math.sin((x-380)/310*Math.PI*1.2),n=3+Math.floor(r()*3);
+    for(var i=0;i<n;i++){
+      var a=(r()-.5)*2.4,len=6+r()*12,ox=(r()-.5)*14,oy=(r()-.5)*14;
+      el(g,'line',{x1:x+ox-Math.cos(a)*len/2,y1:cy+oy-Math.sin(a)*len/2,x2:x+ox+Math.cos(a)*len/2,y2:cy+oy+Math.sin(a)*len/2,'stroke-width':1.4,'stroke-linecap':'round'});
+    }
+  }
+  el(svg,'text',{x:30,y:170}).textContent='Steady movement: normal stroke';
+  el(svg,'text',{x:380,y:170}).textContent='Tremor: cross-hatch texture';
+})();
+(function(){
+  var c=document.getElementById('hatch');if(!c)return;
+  var ctx=c.getContext('2d');
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+  function size(){var r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;ctx.setTransform(d,0,0,d,0,0)}
+  function stroke(){
+    var w=c.clientWidth,h=c.clientHeight;
+    var x=w*0.45+Math.random()*w*0.55,y=Math.random()*h;
+    var len=18+Math.random()*26,a=(Math.random()<.5?1:-1)*Math.PI/4;
+    ctx.strokeStyle=Math.random()<.15?css('--hatch-b'):css('--hatch-a');
+    ctx.lineWidth=.8;ctx.beginPath();
+    var px=x,py=y;ctx.moveTo(px,py);
+    for(var i=0;i<8;i++){px+=Math.cos(a)*len/8+(Math.random()-.5)*2.2;py+=Math.sin(a)*len/8+(Math.random()-.5)*2.2;ctx.lineTo(px,py)}
+    ctx.stroke();
+  }
+  size();window.addEventListener('resize',size);
+  for(var i=0;i<900;i++)stroke();   // visible at rest, then keeps adding
+  if(reduce)return;
+  var n=0;(function loop(){for(var i=0;i<3;i++)stroke();if(++n<300)requestAnimationFrame(loop)})();
+})();
+</script>
+</body>
+</html>
